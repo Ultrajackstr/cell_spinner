@@ -1,20 +1,25 @@
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::AtomicBool;
 use std::thread;
 use std::time::Duration;
 
 use anyhow::{bail, Error};
 use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
 
+use crate::app::THREAD_SLEEP;
+
 pub struct Serial {
     port_name: String,
-    port: Mutex<Option<Box<dyn SerialPort>>>,
+    port: Arc<Mutex<Option<Box<dyn SerialPort>>>>,
+    data: Arc<Mutex<[u8; 3]>>,
 }
 
 impl Default for Serial {
     fn default() -> Self {
         Self {
             port_name: String::new(),
-            port: Mutex::new(None),
+            port: Arc::new(Mutex::new(None)),
+            data: Arc::new(Mutex::new([0u8; 3])),
         }
     }
 }
@@ -22,10 +27,12 @@ impl Default for Serial {
 impl Serial {
     pub fn new(port_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let port = Self::connect_to_serial_port(port_name)?;
+        let port = Arc::new(port);
         already_connected_ports.lock().unwrap().push(port_name.into());
         Ok(Self {
             port_name: port_name.into(),
             port,
+            data: Arc::new(Mutex::new([0u8; 3])),
         })
     }
 
@@ -75,5 +82,32 @@ impl Serial {
         if let Some(mut port) = self.port.lock().unwrap().take() {
             port.write_all(b"bye!").ok();
         }
+    }
+
+    pub fn listen_to_serial_port(&self, is_running: Arc<AtomicBool>) {
+        let data = self.data.clone();
+        let port = self.port.clone();
+        thread::spawn(move || {
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                let mut buf: [u8; 3];
+                // Check if there is a byte to read
+                let is_byte = match port.lock().unwrap().as_mut().unwrap().bytes_to_read() {
+                    Ok(n) => n,
+                    Err(_) => return,
+                };
+                if is_byte == 3 {
+                    buf = [0u8; 3];
+                    match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
+                        Ok(_) => {
+                            *data.lock().unwrap() = buf;
+                        }
+                        Err(_) => return,
+                    }
+                } else {
+                    port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::Input).unwrap()
+                }
+            }
+            thread::sleep(Duration::from_millis(THREAD_SLEEP));
+        });
     }
 }

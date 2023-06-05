@@ -7,7 +7,7 @@ use egui::{Color32, RichText, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
-use crate::app::{FONT_BUTTON_SIZE, THEME};
+use crate::app::{BYTES, FONT_BUTTON_SIZE, THEME};
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, Message};
 
@@ -146,21 +146,64 @@ impl TabViewer for Tabs<'_> {
                                 self.thread_spawn_new_motor(*tab, selected_port, motor_name);
                             };
                         });
+                        // Show the run time of the motor
+                        let run_time = self.motor.get(tab).unwrap().get_run_time_ms().as_secs_f32();
+                        ui.label(format!("⏱️: {:.2} s", run_time))
+                            .on_hover_text(
+                                // Show, minutes, hours, days
+                                format!(
+                                    "Total run time of the motor.\n{:.2} minutes\n{:.2} hours\n{:.2} days",
+                                    run_time / 60.0,
+                                    run_time / 3600.0,
+                                    run_time / 86400.0
+                                )
+                            );
                     });
                 });
                 ui.separator();
-                // Show the run time of the motor
-                let run_time = self.motor.get(tab).unwrap().get_run_time_ms().as_secs_f32();
-                ui.label(format!("⏱️: {:.2} s", run_time))
-                    .on_hover_text(
-                        // Show, minutes, hours, days
-                        format!(
-                            "Total run time of the motor.\n{:.2} minutes\n{:.2} hours\n{:.2} days",
-                            run_time / 60.0,
-                            run_time / 3600.0,
-                            run_time / 86400.0
-                        )
-                    );
+                ui.horizontal_centered(|ui| {
+                    // Button to send the parameters to the motor and run it. Focus is check to prevent the button from being pressed when the user is typing in the text field.
+                    ui.add_enabled_ui(is_connected && !is_running && self.main_context.memory(|mem| mem.focus().is_none()), |ui| {
+                        let run_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("Run")
+                            .color(Color32::WHITE)).fill(THEME.green))
+                            .on_hover_text("Right click to start all motors");
+                        if run_response.clicked() {
+                            self.motor.get_mut(tab).unwrap().start_motor();
+                        } else if run_response.secondary_clicked() {
+                            // Start all the connected motors that are not running
+                            self.motor.iter_mut().for_each(|mut motor| {
+                                if motor.get_is_connected() && !motor.get_is_running() {
+                                    motor.start_motor();
+                                }
+                            });
+                        }
+                    });
+                    ui.add_enabled_ui(is_connected && is_running, |ui| {
+                        let stop_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("STOP MOTOR").color(Color32::WHITE)).fill(THEME.red))
+                            .on_hover_text("Right click to stop all motors");
+                        if stop_response.clicked() {
+                            self.motor.get_mut(tab).unwrap().stop_motor();
+                        } else if stop_response.secondary_clicked() {
+                            // Stop all running motors
+                            self.motor.iter_mut().for_each(|mut motor| {
+                                if motor.get_is_running() {
+                                    motor.stop_motor();
+                                }
+                            });
+                        }
+                    });
+                });
+                ui.separator();
+                // Emergency stop button.
+                if ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("EMERGENCY\nSTOP").color(Color32::WHITE))
+                    .fill(THEME.peach))
+                    .on_hover_text("Stop all the motors and disconnect them.")
+                    .clicked() {
+                    self.motor.iter_mut().for_each(|mut motor| {
+                        motor.stop_motor();
+                        motor.disconnect();
+                    });
+                }
             });
         });
     }

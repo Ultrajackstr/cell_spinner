@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use anyhow::Error;
 
+use crate::app::THREAD_SLEEP;
 use crate::utils::graph::Graph;
 use crate::utils::protocols::Protocol;
 use crate::utils::serial::Serial;
@@ -31,7 +32,7 @@ impl Default for Motor {
 }
 
 impl Motor {
-    pub fn new(serial_port: String, motor_name: String,  already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+    pub fn new(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let serial = Serial::new(&serial_port, already_connected_ports)?;
         Ok(Self {
             name: motor_name,
@@ -75,10 +76,6 @@ impl Motor {
         self.is_running.load(std::sync::atomic::Ordering::Relaxed)
     }
 
-    pub fn set_is_running(&mut self, is_running: bool) {
-        self.is_running.store(is_running, std::sync::atomic::Ordering::Relaxed);
-    }
-
     pub fn get_run_time_ms(&self) -> Duration {
         *self.run_time_ms.lock().unwrap()
     }
@@ -94,5 +91,27 @@ impl Motor {
     pub fn disconnect(&mut self) {
         self.serial.disconnect();
         self.serial = Serial::default();
+    }
+
+    pub fn start_motor(&mut self) {
+        self.start_run_time();
+        todo!();
+    }
+
+    pub fn stop_motor(&mut self) {
+        todo!();
+    }
+
+    pub fn start_run_time(&mut self) {
+        let is_running = self.is_running.clone();
+        let run_time_ms = self.run_time_ms.clone();
+        std::thread::spawn(move || {
+            let start_time = std::time::Instant::now();
+            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+                let elapsed_time = start_time.elapsed();
+                *run_time_ms.lock().unwrap() = elapsed_time;
+                std::thread::sleep(Duration::from_millis(THREAD_SLEEP));
+            }
+        });
     }
 }
