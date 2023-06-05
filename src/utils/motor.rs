@@ -31,10 +31,10 @@ impl Default for Motor {
 }
 
 impl Motor {
-    pub fn new(serial_port: String, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+    pub fn new(serial_port: String, motor_name: String,  already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let serial = Serial::new(&serial_port, already_connected_ports)?;
         Ok(Self {
-            name: String::from(""),
+            name: motor_name,
             is_running: Arc::new(AtomicBool::new(false)),
             run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
             protocol: Protocol::default(),

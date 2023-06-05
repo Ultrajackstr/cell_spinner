@@ -38,21 +38,23 @@ impl Tabs<'_> {
     }
 
     fn remove_tab(&mut self, tab: usize) {
-        self.promise_serial_connect.remove(&tab);
         self.already_connected_ports.lock().unwrap().retain(|x| *x != self.motor.get(&tab).unwrap().get_serial().get_port_name());
+        self.motor.get_mut(&tab).unwrap().disconnect();
+        self.selected_port.get_mut(&tab).unwrap().clear();
+        self.promise_serial_connect.remove(&tab);
         self.motor_name.remove(&tab);
         self.motor.remove(&tab);
-        self.added_tabs.retain(|x| *x != tab);
+        self.added_tabs.retain(|x| x != &tab);
     }
 
-    fn thread_spawn_new_motor(&mut self, tab: usize, serial_port: String) {
+    fn thread_spawn_new_motor(&mut self, tab: usize, serial_port: String, motor_name: String) {
         self.promise_serial_connect.insert(tab, Some(()));
         let promise = self.promise_serial_connect.clone();
         let motors = self.motor.clone();
         let channels = self.channels.message_tx.clone();
         let already_connected_ports = self.already_connected_ports.clone();
         thread::spawn(move || {
-            let motor = match Motor::new(serial_port, already_connected_ports) {
+            let motor = match Motor::new(serial_port, motor_name, already_connected_ports) {
                 Ok(motor) => motor,
                 Err(err) => {
                     channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Tab {}", tab)), 3, false)).ok();
@@ -83,11 +85,11 @@ impl Tabs<'_> {
         self.selected_port.insert(tab, self.available_ports[0].clone());
     }
 
-    fn disconnect(&mut self, tab: &mut usize) {
-        self.already_connected_ports.lock().unwrap().retain(|x| *x != self.motor.get(tab).unwrap().get_serial().get_port_name());
-        self.motor.get_mut(tab).unwrap().disconnect();
-        self.selected_port.get_mut(tab).unwrap().clear();
-        self.refresh_available_serial_ports(*tab);
+    fn disconnect(&mut self, tab: usize) {
+        self.already_connected_ports.lock().unwrap().retain(|x| *x != self.motor.get(&tab).unwrap().get_serial().get_port_name());
+        self.motor.get_mut(&tab).unwrap().disconnect();
+        self.selected_port.get_mut(&tab).unwrap().clear();
+        self.refresh_available_serial_ports(tab);
     }
 }
 
@@ -131,7 +133,7 @@ impl TabViewer for Tabs<'_> {
                         // Disconnect button.
                         ui.add_enabled_ui(is_connected, |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("DISCONNECT").color(Color32::WHITE)).fill(THEME.red)).clicked() {
-                                self.disconnect(tab);
+                                self.disconnect(*tab);
                             }
                         });
                         // Connect button.
@@ -140,7 +142,8 @@ impl TabViewer for Tabs<'_> {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Connect").color(Color32::WHITE)).fill(THEME.green)).clicked() {
                                 self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, "Connecting to serial port...", None, Some(format!("Tab {}", tab)), 0, true)).ok();
                                 let selected_port = self.selected_port.get(tab).unwrap().value().to_string();
-                                self.thread_spawn_new_motor(*tab, selected_port);
+                                let motor_name = self.motor_name.get(tab).unwrap().clone();
+                                self.thread_spawn_new_motor(*tab, selected_port, motor_name);
                             };
                         });
                     });
@@ -170,7 +173,7 @@ impl TabViewer for Tabs<'_> {
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         let motor_name = self.motor.get(tab).unwrap().get_name().to_string();
         format!("Motor: {}-{}{}",
-                motor_name,
+                if !motor_name.is_empty() { motor_name } else { tab.to_string() },
                 if is_connected { "🔗" } else { "🚫" },
                 if is_running { "▶️" } else { "⏹️" },
         ).into()

@@ -1,5 +1,7 @@
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 
+use anyhow::anyhow;
 use catppuccin_egui::{LATTE, Theme};
 use chrono::Local;
 use dashmap::DashMap;
@@ -141,9 +143,9 @@ impl CellSpinner {
                     panic!("Error message without error");
                 }
                 let text = if let Some(origin) = message.origin {
-                    format!("{} 💠 {}: {} {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), origin, message.message, message.error.unwrap())
+                    format!("{} 💠 {}: {} - {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), origin, message.message, message.error.unwrap())
                 } else {
-                    format!("{} 💠 {} {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), message.message, message.error.unwrap())
+                    format!("{} 💠 {} - {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), message.message, message.error.unwrap())
                 };
                 tracing::error!(text);
                 self.error_log.insert(0, text.clone());
@@ -186,6 +188,76 @@ impl CellSpinner {
         self.available_ports = available_ports;
         self.promise_serial_connect.insert(tab, None);
     }
+
+    /// Error log window.
+    fn window_error_log(&mut self, ctx: &egui::Context) {
+        if !self.windows_state.is_error_log_open {
+            return;
+        }
+        egui::Window::new("Error Log")
+            .collapsible(false)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("OK")
+                        .color(Color32::WHITE)).fill(THEME.blue))
+                        .clicked() {
+                        self.windows_state.is_error_log_open = false;
+                    }
+                    ui.separator();
+                    if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Open log folder")
+                        .color(Color32::WHITE)).fill(THEME.sapphire))
+                        .clicked() {
+                        if let Some(mut path) = dirs::home_dir() {
+                            path.push("ev_stepper");
+                            match Command::new("explorer")
+                                .arg(path)
+                                .spawn() {
+                                Ok(_) => { self.windows_state.is_error_log_open = false; }
+                                Err(err) => {
+                                    self.message_handler(Message::new(ToastKind::Error, "Error while opening the log folder", Some(anyhow!(err)), None, 3, false));
+                                }
+                            }
+                        }
+                    }
+                });
+
+                egui::ScrollArea::vertical()
+                    .max_height(200.0)
+                    .show(ui, |ui| {
+                        for error in &self.error_log {
+                            ui.separator();
+                            ui.label(error);
+                        }
+                    });
+            });
+    }
+
+    /// Exit confirmation.
+    fn window_exit_confirmation(&mut self, ctx: &egui::Context) {
+        if !self.windows_state.is_confirmation_dialog_open {
+            return;
+        }
+        egui::Window::new("Disconnect before exit")
+            .collapsible(false)
+            .resizable(false)
+            .show(ctx, |ui| {
+                ui.label("Disconnect the board before closing the window.\n ⚠️ You should also stop the motor before disconnecting.");
+                ui.separator();
+                ui.horizontal(|ui| {
+                    // Disconnect button.
+                    if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("DISCONNECT ALL").color(Color32::WHITE)).fill(THEME.red)).clicked() {
+                        self.motor.iter_mut().for_each(|mut motor| motor.disconnect());
+                        self.allowed_to_close = true;
+                    }
+                    ui.separator();
+                    // Cancel button.
+                    if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("CANCEL").color(Color32::WHITE)).fill(THEME.blue)).clicked() {
+                        self.windows_state.is_confirmation_dialog_open = false;
+                    }
+                });
+            });
+    }
 }
 
 impl eframe::App for CellSpinner {
@@ -225,6 +297,15 @@ impl eframe::App for CellSpinner {
 
         // Display toasts
         toasts.show(ctx);
+
+        self.window_error_log(ctx);
+        self.window_exit_confirmation(ctx);
+
+        if self.allowed_to_close {
+            frame.close();
+        }
+
+        ctx.request_repaint();
 
         ////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////
