@@ -69,17 +69,19 @@ fn create_log_folder_and_cleanup() -> PathBuf {
 }
 
 fn main() -> eframe::Result<()> {
-    // Create log file
-    let log_path = create_log_folder_and_cleanup();
-    let log_file = log_path.join(format!("{}_{}.log", APP_NAME, Local::now().format("%Y-%m-%d_%H-%M-%S-%f")));
-    let log_file = std::fs::File::create(log_file).unwrap();
-    let log_file = Mutex::new(log_file);
+    // Create log file // TODO: uncomment later
+    // let log_path = create_log_folder_and_cleanup();
+    // let log_file = log_path.join(format!("{}_{}.log", APP_NAME, Local::now().format("%Y-%m-%d_%H-%M-%S-%f")));
+    // let log_file = std::fs::File::create(log_file).unwrap();
+    // let log_file = Mutex::new(log_file);
 
-    tracing_subscriber::fmt()
-        .with_writer(log_file)
-        .init();
+    // tracing_subscriber::fmt()
+    //     .with_writer(log_file)
+    //     .init();
 
-    log_panics::init();
+    // log_panics::init();
+
+    tracing_subscriber::fmt().init();
 
     let icon = include_bytes!("resources/icon.png");
 

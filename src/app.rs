@@ -46,6 +46,7 @@ pub struct CellSpinner {
     info_message: String,
     info_message_is_waiting: bool,
     error_log: Vec<String>,
+    allowed_to_close: bool,
     // Promises
     promise_serial_connect: Arc<DashMap<usize, Option<()>>>,
     // Serial
@@ -56,7 +57,6 @@ pub struct CellSpinner {
     // Tabs
     current_tab_counter: usize,
     tree: Tree<usize>,
-    absolute_tab_counter: usize,
     added_tabs: Vec<usize>,
     can_tab_close: bool,
 
@@ -76,12 +76,12 @@ impl Default for CellSpinner {
             info_message: "".to_string(),
             info_message_is_waiting: false,
             error_log: vec![],
+            allowed_to_close: false,
             promise_serial_connect: Arc::new(Default::default()),
             available_ports: vec![],
             already_connected_ports: Arc::new(Mutex::new(vec![])),
-            current_tab_counter: 0,
-            tree: Default::default(),
-            absolute_tab_counter: 0,
+            current_tab_counter: 1,
+            tree: Tree::new(vec![1]),
             added_tabs: vec![],
             can_tab_close: false,
             motor: Arc::new(Default::default()),
@@ -302,5 +302,15 @@ impl eframe::App for CellSpinner {
                 self.tree.push_to_focused_leaf(*self.added_tabs.last().unwrap());
             });
         });
+    }
+
+    fn on_close_event(&mut self) -> bool {
+        let any_connected = self.motor.iter().any(|motor| motor.get_is_connected());
+        if any_connected {
+            self.windows_state.is_confirmation_dialog_open = true;
+        } else {
+            self.allowed_to_close = true;
+        }
+        self.allowed_to_close
     }
 }

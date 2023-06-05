@@ -3,9 +3,10 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use egui::{Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer};
+use egui_toast::ToastKind;
 
 use crate::utils::motor::Motor;
-use crate::utils::structs::Channels;
+use crate::utils::structs::{Channels, Message};
 
 pub struct Tabs<'a> {
     pub channels: &'a mut Channels,
@@ -14,7 +15,7 @@ pub struct Tabs<'a> {
     pub added_nodes: &'a mut Vec<NodeIndex>,
     pub added_tabs: &'a mut Vec<usize>,
     pub current_tab_counter: &'a mut usize,
-    pub can_tab_close: &'a mut bool
+    pub can_tab_close: &'a mut bool,
 }
 
 impl Tabs<'_> {
@@ -22,16 +23,24 @@ impl Tabs<'_> {
         self.motor.insert(tab, Motor::default());
         self.added_tabs.push(tab);
     }
+
+    fn remove_tab(&mut self, tab: usize) {
+        self.motor.remove(&tab);
+        self.added_tabs.retain(|x| *x != tab);
+    }
 }
 
 impl TabViewer for Tabs<'_> {
     type Tab = usize;
 
     fn ui(&mut self, ui: &mut Ui, tab: &mut Self::Tab) {
-        //todo
+        ui.label(format!("Hello, World from tab {}!", tab));
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> WidgetText {
+        if self.motor.get(tab).is_none() {
+            return "Motor".into();
+        }
         let is_connected = self.motor.get(tab).unwrap().get_is_connected();
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         let motor_name = self.motor.get(tab).unwrap().get_name();
@@ -40,6 +49,24 @@ impl TabViewer for Tabs<'_> {
                 if is_connected { "🔗" } else { "🚫" },
                 if is_running { "▶️" } else { "⏹️" },
         ).into()
+    }
+
+    fn on_close(&mut self, tab: &mut Self::Tab) -> bool {
+        let is_running = self.motor.get(tab).unwrap().get_is_running();
+        if is_running {
+            let message: Message = Message::new(ToastKind::Warning,
+                                                "Motor is running! Please stop the motor before closing the tab."
+                                                , None, Some(format!("Motor: {}", self.motor.get(tab).unwrap().get_name()))
+                                                , 3, false);
+            let _ = self.channels.message_tx.as_ref().unwrap().send(message).ok();
+            return false;
+        }
+        *self.current_tab_counter -= 1;
+        // Remove from the added tabs.
+        self.added_tabs.retain(|x| *x != *tab);
+        self.remove_tab(*tab);
+        *self.can_tab_close = true;
+        true
     }
 
     fn on_add(&mut self, node: NodeIndex) {
