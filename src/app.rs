@@ -78,7 +78,7 @@ impl CellSpinner {
         let (toast_tx, toast_rx) = std::sync::mpsc::channel();
         self.channels.toast_tx = Some(toast_tx);
         self.channels.toast_rx = Some(toast_rx);
-        let message: Message = Message::new(ToastKind::Info, "Welcome to TemplateApp !!", None, 3, false);
+        let message: Message = Message::new(ToastKind::Info, "Welcome to TemplateApp !!", None, None, 3, false);
         self.message_handler(message);
         // Setup channels for Message.
         let (message_tx, message_rx) = std::sync::mpsc::channel();
