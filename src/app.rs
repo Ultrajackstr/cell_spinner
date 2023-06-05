@@ -19,7 +19,7 @@ pub(crate) const THEME: Theme = Theme {
     ..LATTE
 };
 
-pub struct TemplateApp {
+pub struct CellSpinner {
     app_version: String,
     is_first_frame: bool,
     toast_position_x: f32,
@@ -32,7 +32,7 @@ pub struct TemplateApp {
     info_message_is_waiting: bool,
 }
 
-impl Default for TemplateApp {
+impl Default for CellSpinner {
     fn default() -> Self {
         Self {
             app_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -49,7 +49,7 @@ impl Default for TemplateApp {
     }
 }
 
-impl TemplateApp {
+impl CellSpinner {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // Font setup.
@@ -114,7 +114,7 @@ impl TemplateApp {
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for CellSpinner {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {

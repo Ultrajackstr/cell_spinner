@@ -229,6 +229,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "cell_spinner"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "catppuccin-egui",
+ "chrono",
+ "dirs",
+ "eframe",
+ "egui",
+ "egui-toast",
+ "image",
+ "log-panics",
+ "serde",
+ "tracing",
+ "tracing-subscriber",
+ "trash",
+ "walkdir",
+ "winresource",
+]
+
+[[package]]
 name = "cesu8"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -504,27 +525,6 @@ dependencies = [
  "web-sys",
  "winapi",
  "winit",
-]
-
-[[package]]
-name = "eframe_template_native"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "catppuccin-egui",
- "chrono",
- "dirs",
- "eframe",
- "egui",
- "egui-toast",
- "image",
- "log-panics",
- "serde",
- "tracing",
- "tracing-subscriber",
- "trash",
- "walkdir",
- "winresource",
 ]
 
 [[package]]

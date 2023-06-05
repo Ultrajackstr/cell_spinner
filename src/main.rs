@@ -11,7 +11,7 @@ use dirs::home_dir;
 use egui::{FontFamily, Style, Visuals};
 use walkdir::WalkDir;
 
-pub const APP_NAME: &str = "template_native_app";
+pub const APP_NAME: &str = "cell_spinner";
 
 fn load_icon(data: &[u8]) -> eframe::IconData {
     let (icon_rgba, icon_width, icon_height) = {
@@ -119,7 +119,7 @@ fn main() -> eframe::Result<()> {
                 ..Style::default()
             };
             cc.egui_ctx.set_style(style);
-            Box::new(eframe_template_native::TemplateApp::new(cc))
+            Box::new(cell_spinner::CellSpinner::new(cc))
         }),
     )
 }

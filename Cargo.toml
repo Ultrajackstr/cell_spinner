@@ -1,19 +1,19 @@
 [package]
-name = "eframe_template_native"
-version = "1.0.0"
+name = "cell_spinner"
+version = "0.0.1"
 authors = ["Giacomo Gropplero <giacomo@gropplero.com"]
 edition = "2021"
 rust-version = "1.65"
 
 [[bin]]
-name = "eframe_template_native"
+name = "cell_spinner"
 path = "src/main.rs"
 
 [target.'cfg(windows)'.build-dependencies]
 winresource = "0.1.15"
 
 [package.metadata.winresource]
-FileDescription = "eframe_template_native"
+FileDescription = "cell_spinner"
 LegalCopyright = "Copyright © 2023 - Giacomo Gropplero"
 
 

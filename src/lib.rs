@@ -3,4 +3,4 @@
 mod app;
 mod utils;
 
-pub use app::TemplateApp;
+pub use app::CellSpinner;
