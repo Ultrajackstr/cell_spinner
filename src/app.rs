@@ -1,4 +1,5 @@
 use catppuccin_egui::{LATTE, Theme};
+use chrono::Local;
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_toast::{Toast, ToastKind, Toasts};
@@ -30,6 +31,7 @@ pub struct CellSpinner {
     windows_state: WindowsState,
     info_message: String,
     info_message_is_waiting: bool,
+    error_log: Vec<String>,
 }
 
 impl Default for CellSpinner {
@@ -45,6 +47,7 @@ impl Default for CellSpinner {
             windows_state: WindowsState::default(),
             info_message: "".to_string(),
             info_message_is_waiting: false,
+            error_log: vec![],
         }
     }
 }
@@ -101,7 +104,17 @@ impl CellSpinner {
                 }
             }
             ToastKind::Error => {
-                send_toast(&self.channels.toast_tx, ToastKind::Error, message.message, message.duration);
+                if message.error.is_none() {
+                    panic!("Error message without error");
+                }
+                let text = if let Some(origin) = message.origin {
+                    format!("{} 💠 {}: {} {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), origin, message.message, message.error.unwrap())
+                } else {
+                    format!("{} 💠 {} {:?}", Local::now().format("%d-%m-%Y %H:%M:%S"), message.message, message.error.unwrap())
+                };
+                tracing::error!(text);
+                self.error_log.insert(0, text.clone());
+                send_toast(&self.channels.toast_tx, ToastKind::Error, text, message.duration);
             }
             ToastKind::Warning => {
                 send_toast(&self.channels.toast_tx, ToastKind::Warning, message.message, message.duration);

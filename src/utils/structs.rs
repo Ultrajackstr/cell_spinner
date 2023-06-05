@@ -1,5 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
 
+use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
 
 pub(crate) struct FontAndButtonSize {
@@ -25,6 +26,7 @@ impl Default for FontAndButtonSize {
 pub(crate) struct Message {
     pub(crate) kind: ToastKind,
     pub(crate) message: String,
+    pub(crate) error: Option<Error>,
     pub(crate) origin: Option<String>,
     pub(crate) duration: u64,
     pub(crate) is_waiting: bool,
@@ -35,6 +37,7 @@ impl Default for Message {
         Self {
             kind: ToastKind::Info,
             message: String::new(),
+            error: None,
             origin: None,
             duration: 0,
             is_waiting: false,
@@ -43,10 +46,11 @@ impl Default for Message {
 }
 
 impl Message {
-    pub(crate) fn new(kind: ToastKind, message: &str, origin: Option<String>, duration: u64, is_waiting: bool) -> Self {
+    pub(crate) fn new(kind: ToastKind, message: &str, error: Option<Error>, origin: Option<String>, duration: u64, is_waiting: bool) -> Self {
         Self {
             kind,
             message: message.into(),
+            error,
             origin,
             duration,
             is_waiting,

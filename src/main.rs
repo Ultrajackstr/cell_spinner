@@ -83,7 +83,12 @@ fn main() -> eframe::Result<()> {
 
     let icon = include_bytes!("resources/icon.png");
 
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        resizable: true,
+        icon_data: Some(load_icon(icon)),
+        ..Default::default()
+    };
+
     eframe::run_native(
         APP_NAME,
         native_options,
