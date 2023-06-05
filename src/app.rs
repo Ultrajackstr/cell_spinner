@@ -1,5 +1,9 @@
 use catppuccin_egui::{LATTE, Theme};
-use egui::Color32;
+use egui::{Color32, FontFamily, FontId, RichText, Sense};
+use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
+use egui_toast::ToastKind;
+
+use crate::utils::helpers::send_toast;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
@@ -25,6 +29,7 @@ pub struct TemplateApp {
     width: f32,
     channels: Channels,
     windows_state: WindowsState,
+    info_message_is_waiting: bool,
 }
 
 impl Default for TemplateApp {
@@ -39,6 +44,7 @@ impl Default for TemplateApp {
             width: 0.0,
             channels: Channels::default(),
             windows_state: WindowsState::default(),
+            info_message_is_waiting: false,
         }
     }
 }
@@ -46,29 +52,64 @@ impl Default for TemplateApp {
 impl TemplateApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // This is also where you can customize the look and feel of egui using
-        // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
-
-        // Load previous app state (if any).
-        // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
-
+        // Font setup.
+        let mut style = (*cc.egui_ctx.style()).clone(); // Get current context style
+        style.text_styles = [
+            (Heading, FontId::new(FONT_BUTTON_SIZE.font_large, FontFamily::Proportional)),
+            (Body, FontId::new(FONT_BUTTON_SIZE.font_default, FontFamily::Proportional)),
+            (Monospace, FontId::new(FONT_BUTTON_SIZE.font_default, FontFamily::Monospace)),
+            (Button, FontId::new(FONT_BUTTON_SIZE.font_default, FontFamily::Proportional)),
+            (Small, FontId::new(FONT_BUTTON_SIZE.font_table, FontFamily::Proportional)),
+        ].into();
+        cc.egui_ctx.set_style(style);
+        catppuccin_egui::set_theme(&cc.egui_ctx, THEME);
         Default::default()
+    }
+
+    /// Function executing on first frame.
+    fn startup(&mut self, _ctx: &egui::Context) {
+        if !self.is_first_frame {
+            return;
+        }
+        // Setup channels for toast notifications.
+        let (toast_tx, toast_rx) = std::sync::mpsc::channel();
+        self.channels.toast_tx = Some(toast_tx);
+        self.channels.toast_rx = Some(toast_rx);
+        // send_toast(&self.channels.toast_tx, ToastKind::Info, "Welcome to the TemplateApp", 5);
+        // Setup channels for Message.
+        let (message_tx, message_rx) = std::sync::mpsc::channel();
+        self.channels.message_tx = Some(message_tx);
+        self.channels.message_rx = Some(message_rx);
+        self.is_first_frame = false;
+    }
+
+    /// Message handler.
+    fn message_handler(&mut self, message: &Message) {
+        match message.kind {
+            ToastKind::Info => {
+                self.info_message_is_waiting = message.is_waiting;
+                if !message.is_waiting {
+                    send_toast(&self.channels.toast_tx, ToastKind::Info, &message.message, message.duration);
+                }
+            }
+            ToastKind::Error => {
+                send_toast(&self.channels.toast_tx, ToastKind::Error, &message.message, message.duration);
+            }
+            ToastKind::Warning => {
+                send_toast(&self.channels.toast_tx, ToastKind::Warning, &message.message, message.duration);
+            }
+            ToastKind::Success => {
+                send_toast(&self.channels.toast_tx, ToastKind::Success, &message.message, message.duration);
+            }
+            _ => {}
+        }
     }
 }
 
 impl eframe::App for TemplateApp {
-    /// Called by the frame work to save state before shutdown.
-    fn save(&mut self, storage: &mut dyn eframe::Storage) {
-        eframe::set_value(storage, eframe::APP_KEY, self);
-    }
-
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { label, value } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
