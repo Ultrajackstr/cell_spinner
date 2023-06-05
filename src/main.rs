@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use anyhow::Error;
 use chrono::Local;
 use dirs::home_dir;
+use egui::{FontFamily, Style, Visuals};
 use walkdir::WalkDir;
 
 pub const APP_NAME: &str = "template_native_app";
@@ -84,8 +85,41 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "eframe template",
+        APP_NAME,
         native_options,
-        Box::new(|cc| Box::new(eframe_template::TemplateApp::new(cc))),
+        Box::new(|cc| {
+            // Set fonts
+            let mut fonts = egui::FontDefinitions::default();
+            // Install my own font
+            fonts.font_data.insert(
+                "my_font".to_owned(),
+                egui::FontData::from_static(include_bytes!("resources/fonts/inter/Inter-regular.otf")),
+            );
+            fonts.font_data.insert(
+                "emoji".to_owned(),
+                egui::FontData::from_static(include_bytes!("resources/fonts/noto_emoji/NotoEmoji-Regular.ttf")),
+            );
+            // Put my font first (highest priority):
+            fonts.families.get_mut(&FontFamily::Proportional).unwrap()
+                .insert(0, "my_font".to_owned());
+            fonts.families.get_mut(&FontFamily::Proportional).unwrap()
+                .insert(1, "emoji".to_owned());
+            fonts.families.get_mut(&FontFamily::Monospace).unwrap()
+                .insert(0, "my_font".to_owned());
+            // Tell egui to use these fonts:
+            cc.egui_ctx.set_fonts(fonts);
+            // Set Visuals
+            let visuals = Visuals
+            {
+                slider_trailing_fill: true,
+                ..Visuals::default()
+            };
+            let style = Style {
+                visuals,
+                ..Style::default()
+            };
+            cc.egui_ctx.set_style(style);
+            Box::new(eframe_template_native::TemplateApp::new(cc))
+        }),
     )
 }
