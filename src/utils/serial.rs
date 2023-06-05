@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
+use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
@@ -7,6 +8,7 @@ use anyhow::{bail, Error};
 use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
 
 use crate::app::THREAD_SLEEP;
+use crate::utils::structs::Message;
 
 pub struct Serial {
     port_name: String,
@@ -84,9 +86,10 @@ impl Serial {
         }
     }
 
-    pub fn listen_to_serial_port(&self, is_running: Arc<AtomicBool>) {
+    pub fn listen_to_serial_port(&self, is_running: &Arc<AtomicBool>, message_tx: Option<Sender<Message>>) {
         let data = self.data.clone();
         let port = self.port.clone();
+        let is_running = is_running.clone();
         thread::spawn(move || {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
@@ -109,5 +112,14 @@ impl Serial {
             }
             thread::sleep(Duration::from_millis(THREAD_SLEEP));
         });
+    }
+
+    pub fn send_bytes(&self, bytes: &[u8]) -> Result<(), Error> {
+        if let Some(port) = self.port.lock().unwrap().as_mut() {
+            port.write_all(bytes)?;
+            Ok(())
+        } else {
+            bail!("Port is not connected")
+        }
     }
 }

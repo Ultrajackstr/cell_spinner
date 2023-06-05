@@ -51,3 +51,13 @@ impl Direction {
         }
     }
 }
+
+pub enum StepperState {
+    Finished,
+    EmergencyStop,
+    OpenLoad,
+    OverCurrent,
+    OverHeat,
+    ParseError,
+    EndOfOscillation, //todo: finish
+}
