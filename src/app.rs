@@ -6,7 +6,7 @@ use egui_toast::{Toast, ToastKind, Toasts};
 use crate::utils::helpers::send_toast;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
-pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
+pub(crate) const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
     font_default: 14.0,
     font_large: 20.0,
@@ -14,7 +14,7 @@ pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     button_default: egui::vec2(100.0, 20.0),
 };
 
-pub const THEME: Theme = Theme {
+pub(crate) const THEME: Theme = Theme {
     base: Color32::from_rgb(249, 251, 255),
     ..LATTE
 };
@@ -24,7 +24,6 @@ pub struct TemplateApp {
     is_first_frame: bool,
     toast_position_x: f32,
     toast_position_y: f32,
-    message: Message,
     height: f32,
     width: f32,
     channels: Channels,
@@ -40,7 +39,6 @@ impl Default for TemplateApp {
             is_first_frame: true,
             toast_position_x: 0.0,
             toast_position_y: 0.0,
-            message: Message::default(),
             height: 0.0,
             width: 0.0,
             channels: Channels::default(),
