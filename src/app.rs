@@ -1,7 +1,7 @@
 use catppuccin_egui::{LATTE, Theme};
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
-use egui_toast::ToastKind;
+use egui_toast::{Toast, ToastKind, Toasts};
 
 use crate::utils::helpers::send_toast;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
@@ -29,6 +29,7 @@ pub struct TemplateApp {
     width: f32,
     channels: Channels,
     windows_state: WindowsState,
+    info_message: String,
     info_message_is_waiting: bool,
 }
 
@@ -44,6 +45,7 @@ impl Default for TemplateApp {
             width: 0.0,
             channels: Channels::default(),
             windows_state: WindowsState::default(),
+            info_message: "".to_string(),
             info_message_is_waiting: false,
         }
     }
@@ -75,7 +77,8 @@ impl TemplateApp {
         let (toast_tx, toast_rx) = std::sync::mpsc::channel();
         self.channels.toast_tx = Some(toast_tx);
         self.channels.toast_rx = Some(toast_rx);
-        // send_toast(&self.channels.toast_tx, ToastKind::Info, "Welcome to the TemplateApp", 5);
+        let message: Message = Message::new(ToastKind::Info, "Welcome to TemplateApp !!", None, 3, false);
+        self.message_handler(message);
         // Setup channels for Message.
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         self.channels.message_tx = Some(message_tx);
@@ -84,22 +87,29 @@ impl TemplateApp {
     }
 
     /// Message handler.
-    fn message_handler(&mut self, message: &Message) {
+    fn message_handler(&mut self, message: Message) {
         match message.kind {
             ToastKind::Info => {
                 self.info_message_is_waiting = message.is_waiting;
+                let text = if let Some(origin) = message.origin {
+                    format!("{}: {}", origin, message.message)
+                } else {
+                    message.message.to_string()
+                };
                 if !message.is_waiting {
-                    send_toast(&self.channels.toast_tx, ToastKind::Info, &message.message, message.duration);
+                    send_toast(&self.channels.toast_tx, ToastKind::Info, text, message.duration);
+                } else {
+                    self.info_message = text;
                 }
             }
             ToastKind::Error => {
-                send_toast(&self.channels.toast_tx, ToastKind::Error, &message.message, message.duration);
+                send_toast(&self.channels.toast_tx, ToastKind::Error, message.message, message.duration);
             }
             ToastKind::Warning => {
-                send_toast(&self.channels.toast_tx, ToastKind::Warning, &message.message, message.duration);
+                send_toast(&self.channels.toast_tx, ToastKind::Warning, message.message, message.duration);
             }
             ToastKind::Success => {
-                send_toast(&self.channels.toast_tx, ToastKind::Success, &message.message, message.duration);
+                send_toast(&self.channels.toast_tx, ToastKind::Success, message.message, message.duration);
             }
             _ => {}
         }
@@ -109,72 +119,75 @@ impl TemplateApp {
 impl eframe::App for TemplateApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        /////////////////////////////////////////////
+        // Function executing only on first frame. //
+        /////////////////////////////////////////////
+        self.startup(ctx);
 
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
+        /////////////////////////////////////
+        // Functions executing each frame. //
+        /////////////////////////////////////
+        // Toasts
+        self.height = frame.info().window_info.size.y;
+        self.width = frame.info().window_info.size.x;
+        self.toast_position_x = 0.0;
+        self.toast_position_y = self.height - 30.5;
+        let mut toasts = Toasts::new()
+            .anchor((self.toast_position_x, self.toast_position_y))
+            .direction(egui::Direction::BottomUp)
+            .align_to_end(false)
+            .progress_bar(THEME.mauve, 3.0, THEME.crust);
 
-        #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        _frame.close();
-                    }
-                });
-            });
-        });
-
-        egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
-            });
-
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
+        // Check if new toasts have been sent.
+        if let Some(toast_rx) = &self.channels.toast_rx {
+            if let Ok(msg) = toast_rx.try_recv() {
+                toasts.add(Toast { text: msg.text, kind: msg.kind, options: msg.options });
             }
+        }
 
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
+        // Check if new messages have been sent.
+        if let Some(message_rx) = &self.channels.message_rx {
+            if let Ok(msg) = message_rx.try_recv() {
+                self.message_handler(msg);
+            }
+        }
+
+        // Display toasts
+        toasts.show(ctx);
+
+        ////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////
+        ///////////////
+        // Top Panel //
+        ///////////////
+        egui::TopBottomPanel::top("top_panel")
+            .show(ctx, |ui| {
+                egui::menu::bar(ui, |ui| {
+                    egui::ScrollArea::horizontal().id_source("Top_scroll_area").show(ui, |ui| {
+                        // Title
+                        let response_heading = ui.add(egui::Label::new(RichText::new("TemplateApp").heading())
+                            .sense(Sense::click()))
+                            .on_hover_text(format!("Version {} - Giacomo Gropplero - Copyright © 2023", self.app_version));
+                        if response_heading.secondary_clicked() {
+                            //TODO
+                        };
+                        ui.separator();
+                        // Info message
+                        ui.add_visible_ui(self.info_message_is_waiting, |ui| {
+                            ui.separator();
+                            ui.spinner();
+                            ui.label(&self.info_message);
+                        });
+                    });
                 });
             });
-        });
 
+        ///////////////////
+        // Central Panel //
+        ///////////////////
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            egui::warn_if_debug_build(ui);
+            ui.label("Hello World!");
         });
-
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
     }
 }
