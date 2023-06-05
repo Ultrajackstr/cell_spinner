@@ -291,6 +291,8 @@ impl eframe::App for CellSpinner {
                 .show_inside(ui, &mut Tabs {
                     channels: &mut self.channels,
                     main_context: ctx.clone(),
+                    available_ports: &mut self.available_ports,
+                    already_connected_ports: &mut self.already_connected_ports,
                     motor: &mut self.motor,
                     added_nodes: &mut added_nodes,
                     added_tabs: &mut self.added_tabs,

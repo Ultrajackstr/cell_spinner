@@ -30,8 +30,8 @@ impl Default for Motor {
 }
 
 impl Motor {
-    pub fn new(serial_port: &str, motor_name: &str) -> Result<Self, Error> {
-        let serial = Serial::new(serial_port)?;
+    pub fn new(serial_port: &str, motor_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+        let serial = Serial::new(serial_port, already_connected_ports)?;
         Ok(Self {
             name: motor_name.into(),
             is_running: Arc::new(AtomicBool::new(false)),
@@ -42,20 +42,24 @@ impl Motor {
         })
     }
 
+    pub fn get_serial(&self) -> &Serial {
+        &self.serial
+    }
+
     pub fn get_is_connected(&self) -> bool {
         self.serial.get_is_connected()
     }
 
-    pub fn get_name(&self) -> String {
-        self.name.clone()
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     pub fn set_protocol(&mut self, protocol: Protocol) {
         self.protocol = protocol;
     }
 
-    pub fn get_protocol(&self) -> Protocol {
-        self.protocol.clone()
+    pub fn get_protocol(&self) -> &Protocol {
+        &self.protocol
     }
 
     pub fn get_is_running(&self) -> bool {

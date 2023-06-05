@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -20,8 +20,9 @@ impl Default for Serial {
 }
 
 impl Serial {
-    pub fn new(port_name: &str) -> Result<Self, Error> {
+    pub fn new(port_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let port = Self::connect_to_serial_port(port_name)?;
+        already_connected_ports.lock().unwrap().push(port_name.into());
         Ok(Self {
             port_name: port_name.into(),
             port,
@@ -64,5 +65,9 @@ impl Serial {
 
     pub fn get_is_connected(&self) -> bool {
         self.port.lock().unwrap().is_some()
+    }
+
+    pub fn get_port_name(&self) -> &str {
+        &self.port_name
     }
 }
