@@ -1,10 +1,16 @@
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use catppuccin_egui::{LATTE, Theme};
 use chrono::Local;
+use dashmap::DashMap;
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_toast::{Toast, ToastKind, Toasts};
+use crate::utils::graph::Graph;
 
 use crate::utils::helpers::send_toast;
+use crate::utils::protocols::Protocol;
+use crate::utils::serial::Serial;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
@@ -40,6 +46,14 @@ pub struct CellSpinner {
     info_message: String,
     info_message_is_waiting: bool,
     error_log: Vec<String>,
+    // Serial
+    serial: Arc<DashMap<usize, Serial>>,
+    already_connected_ports: Arc<Mutex<Vec<String>>>,
+    // Protocol
+    protocol: Arc<DashMap<usize, Protocol>>,
+    run_time: Arc<DashMap<usize, Duration>>,
+    graph: Arc<DashMap<usize, Graph>>,
+    
 }
 
 impl Default for CellSpinner {
@@ -56,6 +70,11 @@ impl Default for CellSpinner {
             info_message: "".to_string(),
             info_message_is_waiting: false,
             error_log: vec![],
+            serial: Arc::new(Default::default()),
+            already_connected_ports: Arc::new(Mutex::new(vec![])),
+            protocol: Arc::new(Default::default()),
+            run_time: Arc::new(Default::default()),
+            graph: Arc::new(Default::default()),
         }
     }
 }
