@@ -1,4 +1,6 @@
-use egui_toast::ToastKind;
+use std::sync::mpsc::{Receiver, Sender};
+
+use egui_toast::{Toast, ToastKind};
 
 pub(crate) struct FontAndButtonSize {
     pub(crate) font_table: f32,
@@ -70,4 +72,18 @@ impl Message {
             is_waiting: false,
         }
     }
+}
+
+#[derive(Default)]
+pub(crate) struct Channels {
+    pub(crate) toast_tx: Option<Sender<Toast>>,
+    pub(crate) toast_rx: Option<Receiver<Toast>>,
+    pub(crate) message_tx: Option<Sender<Message>>,
+    pub(crate) message_rx: Option<Receiver<Message>>,
+}
+
+#[derive(Default)]
+pub(crate) struct WindowsState {
+    pub(crate) is_about_open: bool,
+    pub(crate) is_help_open: bool,
 }

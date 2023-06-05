@@ -1,21 +1,44 @@
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+use catppuccin_egui::{LATTE, Theme};
+use egui::Color32;
+use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
-    // this how you opt-out of serialization of a member
-    #[serde(skip)]
-    value: f32,
+pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
+    font_table: 13.0,
+    font_default: 14.0,
+    font_large: 20.0,
+    button_top_panel: egui::vec2(75.0, 20.0),
+    button_default: egui::vec2(100.0, 20.0),
+};
+
+pub const THEME: Theme = Theme {
+    base: Color32::from_rgb(249, 251, 255),
+    ..LATTE
+};
+
+pub struct TemplateApp {
+    app_version: String,
+    is_first_frame: bool,
+    toast_position_x: f32,
+    toast_position_y: f32,
+    message: Message,
+    height: f32,
+    width: f32,
+    channels: Channels,
+    windows_state: WindowsState,
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
+            is_first_frame: true,
+            toast_position_x: 0.0,
+            toast_position_y: 0.0,
+            message: Message::default(),
+            height: 0.0,
+            width: 0.0,
+            channels: Channels::default(),
+            windows_state: WindowsState::default(),
         }
     }
 }
