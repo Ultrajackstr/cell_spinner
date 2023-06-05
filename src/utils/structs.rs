@@ -70,8 +70,8 @@ pub struct Channels {
 
 #[derive(Default)]
 pub struct WindowsState {
-    pub is_about_open: bool,
-    pub is_help_open: bool,
+    pub is_confirmation_dialog_open: bool,
+    pub is_error_log_open: bool,
 }
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -108,6 +108,58 @@ impl Rotation {
         bytes[17..25].copy_from_slice(&self.steps_for_one_direction_cycle.to_le_bytes());
         bytes[25..26].copy_from_slice(&self.direction.to_byte().to_le_bytes());
         bytes[26..34].copy_from_slice(&self.pause_before_direction_change_ms.to_le_bytes());
+        bytes
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct Protocol {
+    pub rotation: Rotation,
+    pub rotation_duration_ms: u64,
+    pub pause_before_agitation_ms: u64,
+    pub agitation: Rotation,
+    pub agitation_duration_ms: u64,
+    pub pause_after_agitation_ms: u64,
+    pub global_duration_ms: u64,
+}
+
+impl Default for Protocol {
+    fn default() -> Self {
+        Self {
+            rotation: Rotation::default(),
+            rotation_duration_ms: 0,
+            pause_before_agitation_ms: 0,
+            agitation: Rotation::default(),
+            agitation_duration_ms: 0,
+            pause_after_agitation_ms: 0,
+            global_duration_ms: 0,
+        }
+    }
+}
+
+impl Protocol {
+    pub fn new(rotation: Rotation, rotation_duration_ms: u64, pause_before_agitation_ms: u64, agitation: Rotation, agitation_duration_ms: u64, pause_after_agitation_ms: u64, global_duration_ms: u64) -> Self {
+        Self {
+            rotation,
+            rotation_duration_ms,
+            pause_before_agitation_ms,
+            agitation,
+            agitation_duration_ms,
+            pause_after_agitation_ms,
+            global_duration_ms,
+        }
+    }
+
+    /// Protocol to bytes for serial communication
+    pub fn to_bytes(&self) -> [u8; 108] {
+        let mut bytes = [0u8; 108];
+        bytes[0..34].copy_from_slice(&self.rotation.to_bytes());
+        bytes[34..42].copy_from_slice(&self.rotation_duration_ms.to_le_bytes());
+        bytes[42..50].copy_from_slice(&self.pause_before_agitation_ms.to_le_bytes());
+        bytes[50..84].copy_from_slice(&self.agitation.to_bytes());
+        bytes[84..92].copy_from_slice(&self.agitation_duration_ms.to_le_bytes());
+        bytes[92..100].copy_from_slice(&self.pause_after_agitation_ms.to_le_bytes());
+        bytes[100..108].copy_from_slice(&self.global_duration_ms.to_le_bytes());
         bytes
     }
 }
