@@ -70,4 +70,10 @@ impl Serial {
     pub fn get_port_name(&self) -> &str {
         &self.port_name
     }
+
+    pub fn disconnect(&self) {
+        if let Some(mut port) = self.port.lock().unwrap().take() {
+            port.write_all(b"bye!").ok();
+        }
+    }
 }

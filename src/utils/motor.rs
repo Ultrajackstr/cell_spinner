@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::time::Duration;
 
 use anyhow::Error;
 
@@ -10,7 +11,7 @@ use crate::utils::serial::Serial;
 pub struct Motor {
     name: String,
     is_running: Arc<AtomicBool>,
-    run_time_ms: Arc<AtomicU64>,
+    run_time_ms: Arc<Mutex<Duration>>,
     protocol: Protocol,
     serial: Serial,
     graph: Arc<Mutex<Graph>>,
@@ -21,7 +22,7 @@ impl Default for Motor {
         Self {
             name: String::from(""),
             is_running: Arc::new(AtomicBool::new(false)),
-            run_time_ms: Arc::new(AtomicU64::new(0)),
+            run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
             protocol: Protocol::default(),
             serial: Serial::default(),
             graph: Arc::new(Mutex::new(Graph::default())),
@@ -30,12 +31,12 @@ impl Default for Motor {
 }
 
 impl Motor {
-    pub fn new(serial_port: &str, motor_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
-        let serial = Serial::new(serial_port, already_connected_ports)?;
+    pub fn new(serial_port: String, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+        let serial = Serial::new(&serial_port, already_connected_ports)?;
         Ok(Self {
-            name: motor_name.into(),
+            name: String::from(""),
             is_running: Arc::new(AtomicBool::new(false)),
-            run_time_ms: Arc::new(AtomicU64::new(0)),
+            run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
             protocol: Protocol::default(),
             serial,
             graph: Arc::new(Mutex::new(Graph::default())),
@@ -54,6 +55,14 @@ impl Motor {
         &self.name
     }
 
+    pub fn set_name(&mut self, name: &str) {
+        self.name = name.to_string();
+    }
+
+    pub fn get_name_mut(&mut self) -> &mut String {
+        &mut self.name
+    }
+
     pub fn set_protocol(&mut self, protocol: Protocol) {
         self.protocol = protocol;
     }
@@ -70,12 +79,8 @@ impl Motor {
         self.is_running.store(is_running, std::sync::atomic::Ordering::Relaxed);
     }
 
-    pub fn get_run_time_ms(&self) -> u64 {
-        self.run_time_ms.load(std::sync::atomic::Ordering::Relaxed)
-    }
-
-    pub fn set_run_time_ms(&mut self, run_time_ms: u64) {
-        self.run_time_ms.store(run_time_ms, std::sync::atomic::Ordering::Relaxed);
+    pub fn get_run_time_ms(&self) -> Duration {
+        *self.run_time_ms.lock().unwrap()
     }
 
     pub fn get_graph(&self) -> Arc<Mutex<Graph>> {
@@ -84,5 +89,10 @@ impl Motor {
 
     pub fn set_graph(&mut self, graph: Graph) {
         self.graph = Arc::new(Mutex::new(graph));
+    }
+
+    pub fn disconnect(&mut self) {
+        self.serial.disconnect();
+        self.serial = Serial::default();
     }
 }

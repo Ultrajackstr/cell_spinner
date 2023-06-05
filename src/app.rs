@@ -50,13 +50,17 @@ pub struct CellSpinner {
     // Promises
     promise_serial_connect: Arc<DashMap<usize, Option<()>>>,
     // Serial
+    selected_port: DashMap<usize, String>,
     available_ports: Vec<String>,
     already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
+    motor_name: DashMap<usize, String>,
+    //Only to prevent loss of focus while changing the name...
     motor: Arc<DashMap<usize, Motor>>,
     // Tabs
     current_tab_counter: usize,
     tree: Tree<usize>,
+    absolute_tab_counter: usize,
     added_tabs: Vec<usize>,
     can_tab_close: bool,
 
@@ -78,13 +82,16 @@ impl Default for CellSpinner {
             error_log: vec![],
             allowed_to_close: false,
             promise_serial_connect: Arc::new(Default::default()),
+            selected_port: DashMap::new(),
             available_ports: vec![],
             already_connected_ports: Arc::new(Mutex::new(vec![])),
             current_tab_counter: 1,
             tree: Tree::new(vec![1]),
+            absolute_tab_counter: 1,
             added_tabs: vec![],
             can_tab_close: false,
             motor: Arc::new(Default::default()),
+            motor_name: Default::default(),
         }
     }
 }
@@ -153,12 +160,15 @@ impl CellSpinner {
                 };
                 tracing::error!(text);
                 self.error_log.insert(0, text.clone());
+                self.info_message_is_waiting = false;
                 send_toast(&self.channels.toast_tx, ToastKind::Error, text, message.duration);
             }
             ToastKind::Warning => {
+                self.info_message_is_waiting = false;
                 send_toast(&self.channels.toast_tx, ToastKind::Warning, message.message, message.duration);
             }
             ToastKind::Success => {
+                self.info_message_is_waiting = false;
                 send_toast(&self.channels.toast_tx, ToastKind::Success, message.message, message.duration);
             }
             _ => {}
@@ -168,6 +178,7 @@ impl CellSpinner {
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
         self.motor.insert(tab, Motor::default());
+        self.motor_name.insert(tab, tab.to_string());
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {
                 let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
@@ -177,10 +188,12 @@ impl CellSpinner {
             Err(err) => {
                 let error = anyhow::Error::new(err);
                 self.message_handler(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Tab {}", tab)), 3, false));
-                vec![]
+                vec!["".to_string()]
             }
         };
+        self.selected_port.insert(tab, available_ports[0].clone());
         self.available_ports = available_ports;
+        self.promise_serial_connect.insert(tab, None);
     }
 }
 
@@ -293,10 +306,14 @@ impl eframe::App for CellSpinner {
                     main_context: ctx.clone(),
                     available_ports: &mut self.available_ports,
                     already_connected_ports: &mut self.already_connected_ports,
+                    selected_port: &mut self.selected_port,
+                    motor_name: &mut self.motor_name,
                     motor: &mut self.motor,
+                    promise_serial_connect: &mut self.promise_serial_connect,
                     added_nodes: &mut added_nodes,
                     added_tabs: &mut self.added_tabs,
                     current_tab_counter: &mut self.current_tab_counter,
+                    absolute_tab_counter: &mut self.absolute_tab_counter,
                     can_tab_close: &mut false,
                 });
             added_nodes.drain(..).for_each(|node| {
