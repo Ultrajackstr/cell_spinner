@@ -2,5 +2,6 @@
 
 mod app;
 mod utils;
+mod tabs;
 
 pub use app::CellSpinner;

@@ -1,14 +1,17 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
+
 use catppuccin_egui::{LATTE, Theme};
 use chrono::Local;
 use dashmap::DashMap;
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
+use egui_dock::{Style, Tree};
 use egui_toast::{Toast, ToastKind, Toasts};
-use crate::utils::graph::Graph;
 
+use crate::utils::graph::Graph;
 use crate::utils::helpers::send_toast;
+use crate::utils::motor::Motor;
 use crate::utils::protocols::Protocol;
 use crate::utils::serial::Serial;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
@@ -46,14 +49,19 @@ pub struct CellSpinner {
     info_message: String,
     info_message_is_waiting: bool,
     error_log: Vec<String>,
+    // Promises
+    promise_serial_connect: Arc<DashMap<usize, Option<()>>>,
     // Serial
-    serial: Arc<DashMap<usize, Serial>>,
     already_connected_ports: Arc<Mutex<Vec<String>>>,
-    // Protocol
-    protocol: Arc<DashMap<usize, Protocol>>,
-    run_time: Arc<DashMap<usize, Duration>>,
-    graph: Arc<DashMap<usize, Graph>>,
-    
+    // Motor
+    motor: Arc<DashMap<usize, Motor>>,
+    // Tabs
+    current_tab_counter: usize,
+    tree: Tree<usize>,
+    absolute_tab_counter: usize,
+    added_tabs: Vec<usize>,
+    can_tab_close: bool,
+
 }
 
 impl Default for CellSpinner {
@@ -70,11 +78,14 @@ impl Default for CellSpinner {
             info_message: "".to_string(),
             info_message_is_waiting: false,
             error_log: vec![],
-            serial: Arc::new(Default::default()),
+            promise_serial_connect: Arc::new(Default::default()),
             already_connected_ports: Arc::new(Mutex::new(vec![])),
-            protocol: Arc::new(Default::default()),
-            run_time: Arc::new(Default::default()),
-            graph: Arc::new(Default::default()),
+            current_tab_counter: 0,
+            tree: Default::default(),
+            absolute_tab_counter: 0,
+            added_tabs: vec![],
+            can_tab_close: false,
+            motor: Arc::new(Default::default()),
         }
     }
 }
@@ -111,6 +122,8 @@ impl CellSpinner {
         let (message_tx, message_rx) = std::sync::mpsc::channel();
         self.channels.message_tx = Some(message_tx);
         self.channels.message_rx = Some(message_rx);
+        self.init_tab(1);
+        self.added_tabs.push(1);
         self.is_first_frame = false;
     }
 
@@ -151,6 +164,13 @@ impl CellSpinner {
             }
             _ => {}
         }
+    }
+
+    /// Init tab
+    fn init_tab(&mut self, tab: usize) {
+        self.graph.insert(tab, Graph::default());
+        self.serial.insert(tab, Serial::default());
+        self.protocol.insert(tab, Protocol::default());
     }
 }
 
@@ -256,7 +276,55 @@ impl eframe::App for CellSpinner {
         // Central Panel //
         ///////////////////
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("Hello World!");
+            let mut added_nodes = vec![];
+            let show_close = self.current_tab_counter != 1;
+            let show_add = self.current_tab_counter < 5;
+            egui_dock::DockArea::new(&mut self.tree)
+                .style({
+                    let mut style = Style::from_egui(ctx.style().as_ref());
+                    style.tabs.fill_tab_bar = true;
+                    style.buttons.add_tab_bg_fill = THEME.sky;
+                    style.tabs.text_color_focused = THEME.blue;
+                    style
+                })
+                .show_close_buttons(show_close)
+                .show_add_buttons(show_add)
+                .show_inside(ui, &mut TabsData {
+                    channels: &mut self.channels,
+                    main_context: ctx.clone(),
+                    phases_window: &mut self.windows_state.phases,
+                    position_phase_window: &mut self.windows_state.phases_position,
+                    serial_port: &mut self.serial_port,
+                    serial_port_name_for_selection: &mut self.serial_port_name,
+                    serial_port_name_connected: &mut self.serial_port_name_connected,
+                    available_ports: &mut self.available_ports,
+                    promise_available_ports: &mut self.promise_available_ports,
+                    promise_rp_pico_connect: &mut self.promise_rp_pico_connect,
+                    promise_rp_pico_write: &mut self.promise_rp_pico_write,
+                    is_new_repetition: &mut self.is_new_repetition,
+                    is_motor_running: &mut self.is_motor_running,
+                    run_time: &mut self.run_time,
+                    phase_color: &mut self.phase_color,
+                    phase_background_color: &mut self.phase_background_color,
+                    path_config: &mut self.path_config,
+                    index_thread_graph_point_time_control: &mut self.index_thread_graph_point_time_control,
+                    added_nodes: &mut added_nodes,
+                    added_tabs: &mut self.added_tabs,
+                    current_tab_counter: &mut self.current_tab_counter,
+                    absolute_tab_counter: &mut self.absolute_tab_counter,
+                    can_tab_close: &mut self.can_tab_close,
+                    position_control_setup: &mut self.position_control_setup,
+                    index_thread_graph_point_position_control: &mut self.index_thread_graph_point_position_control,
+                    graphs_data: &mut self.graphs_data,
+                    time_control_setup: &mut self.time_control_setup,
+                    control_mode: &mut self.control_mode,
+                    phase_for_timer: &mut self.phase_for_timer,
+                    sync_conf_for_all_motors: &mut self.sync_conf_for_all_motors,
+                });
+            added_nodes.drain(..).for_each(|node| {
+                self.tree.set_focused_node(node);
+                self.tree.push_to_focused_leaf(*self.added_tabs.last().unwrap());
+            });
         });
     }
 }

@@ -4,3 +4,4 @@ pub mod enums;
 pub mod protocols;
 pub mod serial;
 pub mod graph;
+pub mod motor;
