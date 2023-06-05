@@ -7,8 +7,8 @@ use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_dock::{Style, Tree};
 use egui_toast::{Toast, ToastKind, Toasts};
-use crate::tabs::Tabs;
 
+use crate::tabs::Tabs;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
@@ -115,7 +115,7 @@ impl CellSpinner {
         let (toast_tx, toast_rx) = std::sync::mpsc::channel();
         self.channels.toast_tx = Some(toast_tx);
         self.channels.toast_rx = Some(toast_rx);
-        let message: Message = Message::new(ToastKind::Info, "Welcome to TemplateApp !!", None, None, 3, false);
+        let message: Message = Message::new(ToastKind::Info, &format!("Cell Spinner v.{}", self.app_version), None, None, 3, false);
         self.message_handler(message);
         // Setup channels for Message.
         let (message_tx, message_rx) = std::sync::mpsc::channel();
@@ -238,7 +238,7 @@ impl eframe::App for CellSpinner {
                         let is_running = self.motor.get(&tab).unwrap().get_is_running();
                         let is_any_running = self.motor.iter().any(|v| v.get_is_running());
                         // Title
-                        let response_heading = ui.add(egui::Label::new(RichText::new("EV Stepper Controller").heading())
+                        let response_heading = ui.add(egui::Label::new(RichText::new("Cell Spinner").heading())
                             .sense(Sense::click()))
                             .on_hover_text(format!("Version {} - Giacomo Gropplero - Copyright © 2023", self.app_version));
                         if response_heading.secondary_clicked() {
@@ -292,6 +292,10 @@ impl eframe::App for CellSpinner {
                     channels: &mut self.channels,
                     main_context: ctx.clone(),
                     motor: &mut self.motor,
+                    added_nodes: &mut added_nodes,
+                    added_tabs: &mut self.added_tabs,
+                    current_tab_counter: &mut self.current_tab_counter,
+                    can_tab_close: &mut false,
                 });
             added_nodes.drain(..).for_each(|node| {
                 self.tree.set_focused_node(node);
