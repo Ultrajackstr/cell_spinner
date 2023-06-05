@@ -1,2 +1,3 @@
-pub(crate) mod structs;
-pub(crate) mod helpers;
+pub mod structs;
+pub mod helpers;
+pub mod enums;

@@ -7,7 +7,7 @@ use egui_toast::{Toast, ToastKind, Toasts};
 use crate::utils::helpers::send_toast;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
-pub(crate) const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
+pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
     font_default: 14.0,
     font_large: 20.0,
@@ -15,7 +15,15 @@ pub(crate) const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     button_default: egui::vec2(100.0, 20.0),
 };
 
-pub(crate) const THEME: Theme = Theme {
+pub const THREAD_SLEEP: u64 = 10;
+pub const MAX_ACCELERATION: u32 = 20_000;
+pub const MIN_ACCELERATION: u32 = 1;
+pub const MIN_RPM_FULL: u32 = 1;
+pub const MAX_RPM: u32 = 5_000;
+pub const MAX_STEPS: u32 = 4_000_000_000;
+pub const MAX_POINTS_GRAPHS: usize = 250_000;
+pub const BYTES: usize = 110;
+pub const THEME: Theme = Theme {
     base: Color32::from_rgb(249, 251, 255),
     ..LATTE
 };
@@ -176,14 +184,45 @@ impl eframe::App for CellSpinner {
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
                     egui::ScrollArea::horizontal().id_source("Top_scroll_area").show(ui, |ui| {
+                        let mut tab = 1;
+                        if let Some(active_tab) = self.tree.find_active_focused() {
+                            tab = *active_tab.1;
+                        };
+                        let is_running = *self.is_motor_running.get(&tab).unwrap();
+                        let is_any_running = self.is_motor_running.iter().any(|v| *v);
                         // Title
-                        let response_heading = ui.add(egui::Label::new(RichText::new("TemplateApp").heading())
+                        let response_heading = ui.add(egui::Label::new(RichText::new("EV Stepper Controller").heading())
                             .sense(Sense::click()))
                             .on_hover_text(format!("Version {} - Giacomo Gropplero - Copyright © 2023", self.app_version));
                         if response_heading.secondary_clicked() {
-                            //TODO
+                            self.windows_state.is_error_log_open = !self.windows_state.is_error_log_open;
                         };
                         ui.separator();
+                        // Buttons to save and load config.
+                        if ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Save config").fill(THEME.surface0))
+                            .clicked() {
+                            self.export_configuration(&tab);
+                        }
+                        ui.separator();
+                        ui.add_enabled_ui(!is_running, |ui| {
+                            let import_response = ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Import config").fill(THEME.surface0))
+                                .on_hover_text("Right click to import config for all the motors");
+                            if import_response.clicked() {
+                                self.import_configuration(&tab);
+                            } else if import_response.secondary_clicked() {
+                                self.import_for_all_motors = true;
+                                self.import_configuration(&tab);
+                            }
+                        });
+                        // Sync all motors
+                        ui.separator();
+                        ui.add_enabled_ui(!is_any_running, |ui| {
+                            ui.add(IndicatorButton::new(&mut self.sync_conf_for_all_motors)
+                                       .label("Sync config")
+                                       .width(FONT_BUTTON_SIZE.button_top_panel.x)
+                                       .height(FONT_BUTTON_SIZE.button_top_panel.y),
+                            ).on_hover_text("Sync the configuration changes with all the motors.");
+                        });
                         // Info message
                         ui.add_visible_ui(self.info_message_is_waiting, |ui| {
                             ui.separator();

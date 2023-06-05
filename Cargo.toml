@@ -32,6 +32,7 @@ log-panics = "2.1.0"
 image = "0.24.6"
 chrono = "0.4.26"
 anyhow = "1.0.71"
+dashmap = "5.4.0"
 
 catppuccin-egui = "3.0.0"
 dirs = "5.0.1"
