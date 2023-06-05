@@ -136,19 +136,6 @@ impl CellSpinner {
     /// Message handler.
     fn message_handler(&mut self, message: Message) {
         match message.kind {
-            ToastKind::Info => {
-                self.info_message_is_waiting = message.is_waiting;
-                let text = if let Some(origin) = message.origin {
-                    format!("{}: {}", origin, message.message)
-                } else {
-                    message.message.to_string()
-                };
-                if !message.is_waiting {
-                    send_toast(&self.channels.toast_tx, ToastKind::Info, text, message.duration);
-                } else {
-                    self.info_message = text;
-                }
-            }
             ToastKind::Error => {
                 if message.error.is_none() {
                     panic!("Error message without error");
@@ -163,15 +150,19 @@ impl CellSpinner {
                 self.info_message_is_waiting = false;
                 send_toast(&self.channels.toast_tx, ToastKind::Error, text, message.duration);
             }
-            ToastKind::Warning => {
-                self.info_message_is_waiting = false;
-                send_toast(&self.channels.toast_tx, ToastKind::Warning, message.message, message.duration);
+            _ => {
+                self.info_message_is_waiting = message.is_waiting;
+                let text = if let Some(origin) = message.origin {
+                    format!("{}: {}", origin, message.message)
+                } else {
+                    message.message.to_string()
+                };
+                if !message.is_waiting {
+                    send_toast(&self.channels.toast_tx, message.kind, text, message.duration);
+                } else {
+                    self.info_message = text;
+                }
             }
-            ToastKind::Success => {
-                self.info_message_is_waiting = false;
-                send_toast(&self.channels.toast_tx, ToastKind::Success, message.message, message.duration);
-            }
-            _ => {}
         }
     }
 

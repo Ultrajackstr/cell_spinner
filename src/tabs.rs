@@ -104,7 +104,7 @@ impl TabViewer for Tabs<'_> {
         egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
-                    ui.horizontal(|ui| {
+                    ui.horizontal_top(|ui| {
                         // Refresh COM ports button.
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none(), |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new("Refresh ➡")).clicked() {
@@ -118,6 +118,13 @@ impl TabViewer for Tabs<'_> {
                                         ui.selectable_value(self.selected_port.get_mut(tab).unwrap().value_mut(), port.to_string(), port.to_string());
                                     }
                                 });
+                        });
+                        ui.add_enabled_ui(is_connected, |ui| {
+                            if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut()))
+                                .on_hover_text("Change the name of the motor")
+                                .lost_focus() {
+                                self.motor.get_mut(tab).unwrap().set_name(&self.motor_name.get(tab).unwrap());
+                            }
                         });
                     });
                     ui.horizontal(|ui| {
@@ -138,7 +145,7 @@ impl TabViewer for Tabs<'_> {
                         });
                     });
                 });
-
+                ui.separator();
                 // Show the run time of the motor
                 let run_time = self.motor.get(tab).unwrap().get_run_time_ms().as_secs_f32();
                 ui.label(format!("⏱️: {:.2} s", run_time))
@@ -152,13 +159,6 @@ impl TabViewer for Tabs<'_> {
                         )
                     );
             });
-            ui.separator();
-        });
-        ui.add_enabled_ui(is_connected, |ui| {
-            ui.label("Motor name:");
-            if ui.add_sized(egui::vec2(50.0, 35.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut())).lost_focus() {
-                self.motor.get_mut(tab).unwrap().set_name(&self.motor_name.get(tab).unwrap());
-            }
         });
     }
 
