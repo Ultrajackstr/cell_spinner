@@ -1,5 +1,4 @@
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
 
 use catppuccin_egui::{LATTE, Theme};
 use chrono::Local;
@@ -8,12 +7,10 @@ use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_dock::{Style, Tree};
 use egui_toast::{Toast, ToastKind, Toasts};
+use crate::tabs::Tabs;
 
-use crate::utils::graph::Graph;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
-use crate::utils::protocols::Protocol;
-use crate::utils::serial::Serial;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
@@ -52,6 +49,7 @@ pub struct CellSpinner {
     // Promises
     promise_serial_connect: Arc<DashMap<usize, Option<()>>>,
     // Serial
+    available_ports: Vec<String>,
     already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
     motor: Arc<DashMap<usize, Motor>>,
@@ -79,6 +77,7 @@ impl Default for CellSpinner {
             info_message_is_waiting: false,
             error_log: vec![],
             promise_serial_connect: Arc::new(Default::default()),
+            available_ports: vec![],
             already_connected_ports: Arc::new(Mutex::new(vec![])),
             current_tab_counter: 0,
             tree: Default::default(),
@@ -168,15 +167,24 @@ impl CellSpinner {
 
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
-        self.graph.insert(tab, Graph::default());
-        self.serial.insert(tab, Serial::default());
-        self.protocol.insert(tab, Protocol::default());
+        self.motor.insert(tab, Motor::default());
+        let available_ports = match serialport::available_ports() {
+            Ok(ports) => {
+                let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
+                    .filter(|port| !self.already_connected_ports.lock().unwrap().contains(port)).collect();
+                available_ports
+            }
+            Err(err) => {
+                let error = anyhow::Error::new(err);
+                self.message_handler(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Tab {}", tab)), 3, false));
+                vec![]
+            }
+        };
+        self.available_ports = available_ports;
     }
 }
 
 impl eframe::App for CellSpinner {
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         /////////////////////////////////////////////
         // Function executing only on first frame. //
@@ -227,8 +235,8 @@ impl eframe::App for CellSpinner {
                         if let Some(active_tab) = self.tree.find_active_focused() {
                             tab = *active_tab.1;
                         };
-                        let is_running = *self.is_motor_running.get(&tab).unwrap();
-                        let is_any_running = self.is_motor_running.iter().any(|v| *v);
+                        let is_running = self.motor.get(&tab).unwrap().get_is_running();
+                        let is_any_running = self.motor.iter().any(|v| v.get_is_running());
                         // Title
                         let response_heading = ui.add(egui::Label::new(RichText::new("EV Stepper Controller").heading())
                             .sense(Sense::click()))
@@ -240,27 +248,18 @@ impl eframe::App for CellSpinner {
                         // Buttons to save and load config.
                         if ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Save config").fill(THEME.surface0))
                             .clicked() {
-                            self.export_configuration(&tab);
+                            // self.export_configuration(&tab);
                         }
                         ui.separator();
                         ui.add_enabled_ui(!is_running, |ui| {
                             let import_response = ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Import config").fill(THEME.surface0))
                                 .on_hover_text("Right click to import config for all the motors");
                             if import_response.clicked() {
-                                self.import_configuration(&tab);
+                                // self.import_configuration(&tab);
                             } else if import_response.secondary_clicked() {
-                                self.import_for_all_motors = true;
-                                self.import_configuration(&tab);
+                                // self.import_for_all_motors = true;
+                                // self.import_configuration(&tab);
                             }
-                        });
-                        // Sync all motors
-                        ui.separator();
-                        ui.add_enabled_ui(!is_any_running, |ui| {
-                            ui.add(IndicatorButton::new(&mut self.sync_conf_for_all_motors)
-                                       .label("Sync config")
-                                       .width(FONT_BUTTON_SIZE.button_top_panel.x)
-                                       .height(FONT_BUTTON_SIZE.button_top_panel.y),
-                            ).on_hover_text("Sync the configuration changes with all the motors.");
                         });
                         // Info message
                         ui.add_visible_ui(self.info_message_is_waiting, |ui| {
@@ -289,37 +288,10 @@ impl eframe::App for CellSpinner {
                 })
                 .show_close_buttons(show_close)
                 .show_add_buttons(show_add)
-                .show_inside(ui, &mut TabsData {
+                .show_inside(ui, &mut Tabs {
                     channels: &mut self.channels,
                     main_context: ctx.clone(),
-                    phases_window: &mut self.windows_state.phases,
-                    position_phase_window: &mut self.windows_state.phases_position,
-                    serial_port: &mut self.serial_port,
-                    serial_port_name_for_selection: &mut self.serial_port_name,
-                    serial_port_name_connected: &mut self.serial_port_name_connected,
-                    available_ports: &mut self.available_ports,
-                    promise_available_ports: &mut self.promise_available_ports,
-                    promise_rp_pico_connect: &mut self.promise_rp_pico_connect,
-                    promise_rp_pico_write: &mut self.promise_rp_pico_write,
-                    is_new_repetition: &mut self.is_new_repetition,
-                    is_motor_running: &mut self.is_motor_running,
-                    run_time: &mut self.run_time,
-                    phase_color: &mut self.phase_color,
-                    phase_background_color: &mut self.phase_background_color,
-                    path_config: &mut self.path_config,
-                    index_thread_graph_point_time_control: &mut self.index_thread_graph_point_time_control,
-                    added_nodes: &mut added_nodes,
-                    added_tabs: &mut self.added_tabs,
-                    current_tab_counter: &mut self.current_tab_counter,
-                    absolute_tab_counter: &mut self.absolute_tab_counter,
-                    can_tab_close: &mut self.can_tab_close,
-                    position_control_setup: &mut self.position_control_setup,
-                    index_thread_graph_point_position_control: &mut self.index_thread_graph_point_position_control,
-                    graphs_data: &mut self.graphs_data,
-                    time_control_setup: &mut self.time_control_setup,
-                    control_mode: &mut self.control_mode,
-                    phase_for_timer: &mut self.phase_for_timer,
-                    sync_conf_for_all_motors: &mut self.sync_conf_for_all_motors,
+                    motor: &mut self.motor,
                 });
             added_nodes.drain(..).for_each(|node| {
                 self.tree.set_focused_node(node);

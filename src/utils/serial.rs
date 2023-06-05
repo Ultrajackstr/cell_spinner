@@ -62,5 +62,7 @@ impl Serial {
         Ok(Mutex::new(Some(system_port_unwrapped)))
     }
 
-
+    pub fn get_is_connected(&self) -> bool {
+        self.port.lock().unwrap().is_some()
+    }
 }

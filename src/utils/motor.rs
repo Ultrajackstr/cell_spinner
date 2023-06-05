@@ -42,6 +42,10 @@ impl Motor {
         })
     }
 
+    pub fn get_is_connected(&self) -> bool {
+        self.serial.get_is_connected()
+    }
+
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
@@ -54,7 +58,7 @@ impl Motor {
         self.protocol.clone()
     }
 
-    pub fn is_running(&self) -> bool {
+    pub fn get_is_running(&self) -> bool {
         self.is_running.load(std::sync::atomic::Ordering::Relaxed)
     }
 
