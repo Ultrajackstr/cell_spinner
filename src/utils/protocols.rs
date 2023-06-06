@@ -27,25 +27,25 @@ impl Rotation {
 
     fn test_rotation() -> Self {
         Self {
-            rpm: 1000,
+            rpm: 60,
             accel: 6000,
-            step_mode: StepMode128::Full,
-            duration_of_one_direction_cycle_ms: 4000,
+            step_mode: StepMode128::M16,
+            duration_of_one_direction_cycle_ms: 5000,
             steps_for_one_direction_cycle: 0,
             direction: Direction::Forward,
-            pause_before_direction_change_ms: 1000,
+            pause_before_direction_change_ms: 0,
         }
     }
 
     fn test_agitation() -> Self {
         Self {
-            rpm: 2000,
-            accel: 6000,
+            rpm: 4000,
+            accel: 10_000,
             step_mode: StepMode128::Full,
-            duration_of_one_direction_cycle_ms: 4000,
+            duration_of_one_direction_cycle_ms: 5000,
             steps_for_one_direction_cycle: 0,
             direction: Direction::Forward,
-            pause_before_direction_change_ms: 1000,
+            pause_before_direction_change_ms: 0,
         }
     }
 
@@ -97,7 +97,7 @@ impl Protocol {
             agitation: Rotation::test_agitation(),
             agitation_duration_ms: 10000,
             pause_after_agitation_ms: 1000,
-            global_duration_ms: 100000,
+            global_duration_ms: 60_000,
         }
     }
 
