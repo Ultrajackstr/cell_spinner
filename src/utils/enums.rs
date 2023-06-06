@@ -1,3 +1,6 @@
+use std::error::Error;
+use std::fmt::Display;
+
 #[derive(Debug, Copy, Clone, Default)]
 pub enum StepMode128 {
     #[default]
@@ -42,7 +45,9 @@ impl Direction {
     }
 }
 
+#[derive(Debug, Default, Copy, Clone)]
 pub enum StepperState {
+    #[default]
     CommandReceived,
     Finished,
     EmergencyStop,
@@ -68,6 +73,23 @@ impl From<&[u8; 3]> for StepperState {
             [b'o', b's', b'r'] => StepperState::OscillationRotation,
             [b'o', b's', b'a'] => StepperState::OscillationAgitation,
             _ => StepperState::Invalid,
+        }
+    }
+}
+
+impl Display for StepperState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StepperState::CommandReceived => write!(f, "Command received"),
+            StepperState::Finished => write!(f, "Finished"),
+            StepperState::EmergencyStop => write!(f, "Emergency stop"),
+            StepperState::OpenLoad => write!(f, "Open load"),
+            StepperState::OverCurrent => write!(f, "Over current"),
+            StepperState::OverHeat => write!(f, "Over heat"),
+            StepperState::ParseError => write!(f, "Parse error"),
+            StepperState::OscillationRotation => write!(f, "Oscillation rotation"),
+            StepperState::OscillationAgitation => write!(f, "Oscillation agitation"),
+            StepperState::Invalid => write!(f, "Invalid"),
         }
     }
 }

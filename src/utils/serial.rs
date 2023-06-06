@@ -5,7 +5,7 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::Duration;
 
-use anyhow::{bail, Error};
+use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
 use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
 
@@ -89,8 +89,8 @@ impl Serial {
                 let is_byte = match port.lock().unwrap().as_mut().unwrap().bytes_to_read() {
                     Ok(n) => n,
                     Err(err) => {
-                        let error = Error::new(err);
-                        let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", Some(error), Some(format!("Port: {}", port_name)), 5, false);
+                        let error = Some(Error::new(err));
+                        let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(format!("Port: {}", port_name)), 5, false);
                         message_tx.as_ref().unwrap().send(message).unwrap();
                         return;
                     }
@@ -101,35 +101,37 @@ impl Serial {
                         Ok(_) => {
                             dbg!(&buf);
                             let state: StepperState = StepperState::from(&buf);
+                            let origin = Some(format!("Port: {}", port_name));
+                            let error = Some(anyhow!("Received: {} ({:?})", String::from_utf8(buf.to_vec()).unwrap(), &buf));
                             match state {
                                 StepperState::CommandReceived => {}
                                 StepperState::Finished => {
-                                    let message: Message = Message::new(ToastKind::Success, "Finished", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Success, "Finished", None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::EmergencyStop => {
-                                    let message: Message = Message::new(ToastKind::Error, "Emergency stop", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Emergency stop", error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OpenLoad => {
-                                    let message: Message = Message::new(ToastKind::Error, "Open load", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Open load", error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverCurrent => {
-                                    let message: Message = Message::new(ToastKind::Error, "Over current", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Over current", error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverHeat => {
-                                    let message: Message = Message::new(ToastKind::Error, "Over heat", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Over heat", error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::ParseError => {
-                                    let message: Message = Message::new(ToastKind::Error, "Parse error", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Parse error", error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
@@ -140,15 +142,15 @@ impl Serial {
                                     todo!()
                                 }
                                 StepperState::Invalid => {
-                                    let message: Message = Message::new(ToastKind::Error, "Invalid state", None, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, "Invalid state", error, None, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                             }
                         }
                         Err(err) => {
-                            let error = Error::new(err);
-                            let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", Some(error), Some(format!("Port: {}", port_name)), 5, false);
+                            let error = Some(Error::new(err));
+                            let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(format!("Port: {}", port_name)), 5, false);
                             message_tx.as_ref().unwrap().send(message).unwrap();
                             return;
                         }

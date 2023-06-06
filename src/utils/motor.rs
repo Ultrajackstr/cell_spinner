@@ -105,7 +105,7 @@ impl Motor {
 
     pub fn stop_motor(&mut self) {
         self.is_running.store(false, std::sync::atomic::Ordering::Relaxed);
-        //TODO: finish
+        // self.serial.send_bytes(vec![b'x']);
     }
 
     pub fn start_run_time(&mut self) {
