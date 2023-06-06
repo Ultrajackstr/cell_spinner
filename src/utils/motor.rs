@@ -6,8 +6,9 @@ use std::time::Duration;
 use anyhow::Error;
 
 use crate::app::THREAD_SLEEP;
+use crate::utils::enums::{Direction, StepMode128};
 use crate::utils::graph::Graph;
-use crate::utils::protocols::Protocol;
+use crate::utils::protocols::{Protocol, Rotation};
 use crate::utils::serial::Serial;
 use crate::utils::structs::Message;
 
@@ -99,8 +100,11 @@ impl Motor {
         self.is_running.store(true, std::sync::atomic::Ordering::Relaxed);
         self.start_run_time();
         self.serial.listen_to_serial_port(&self.is_running, message_tx);
-        let test_protocol = Protocol::test_protocol();
-        self.serial.send_bytes(test_protocol.bytes_vec_to_send());
+        let rotation: Rotation = Rotation::new(60, 6000, StepMode128::M16, 5000, 0, Direction::Forward, 0);
+        let agitation: Rotation = Rotation::new(4000, 10_000, StepMode128::Full, 5000, 0, Direction::Forward, 0);
+        let protocol: Protocol = Protocol::new(rotation, 10_000, 0, agitation, 10_000, 0, 6_000);
+        self.protocol = protocol;
+        self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
 
     pub fn stop_motor(&mut self) {

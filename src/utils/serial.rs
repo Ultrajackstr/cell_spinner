@@ -102,48 +102,49 @@ impl Serial {
                             let state: StepperState = StepperState::from(&buf);
                             let origin = Some(format!("Port: {}", port_name));
                             let error = Some(anyhow!("Received: \"{}\" {:?}", String::from_utf8(buf.to_vec()).unwrap(), &buf));
+                            let message = state.to_string();
                             match state {
                                 StepperState::CommandReceived => {}
-                                StepperState::Finished => {
-                                    let message: Message = Message::new(ToastKind::Success, "Finished", None, origin, 5, false);
+                                StepperState::Finished => { //TODO: check while "fin" is not received
+                                    let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::EmergencyStop => {
-                                    let message: Message = Message::new(ToastKind::Error, "Emergency stop", error, origin, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OpenLoad => {
-                                    let message: Message = Message::new(ToastKind::Error, "Open load", error, origin, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverCurrent => {
-                                    let message: Message = Message::new(ToastKind::Error, "Over current", error, origin, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverHeat => {
-                                    let message: Message = Message::new(ToastKind::Error, "Over heat", error, origin, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::ParseError => {
-                                    let message: Message = Message::new(ToastKind::Error, "Parse error", error, origin, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OscillationRotation => {
-                                    let message: Message = Message::new(ToastKind::Info, "Oscillation rotation", None, origin, 2, false);
+                                    let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::OscillationAgitation => {
-                                    let message: Message = Message::new(ToastKind::Info, "Oscillation agitation", None, origin, 2, false);
+                                    let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::Invalid => {
-                                    let message: Message = Message::new(ToastKind::Error, "Invalid state", error, None, 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, None, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
