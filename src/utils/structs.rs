@@ -56,6 +56,10 @@ impl Message {
             is_waiting,
         }
     }
+
+    pub fn set_origin(&mut self, origin: &str) {
+        self.origin = Some(origin.into());
+    }
 }
 
 #[derive(Default)]

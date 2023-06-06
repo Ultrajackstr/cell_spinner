@@ -95,7 +95,7 @@ impl Serial {
                         return;
                     }
                 };
-                if is_byte == 3 {
+                if is_byte != 0 {
                     buf = [0u8; 3];
                     match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
                         Ok(_) => {
@@ -105,7 +105,7 @@ impl Serial {
                             let message = state.to_string();
                             match state {
                                 StepperState::CommandReceived => {}
-                                StepperState::Finished => { //TODO: check while "fin" is not received
+                                StepperState::Finished => {
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -158,6 +158,9 @@ impl Serial {
                         }
                     }
                 }
+                // else {
+                //     port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::All).ok();
+                // }
                 thread::sleep(Duration::from_millis(THREAD_SLEEP));
             }
         });
