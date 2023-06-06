@@ -25,10 +25,9 @@ pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
 
 pub const THREAD_SLEEP: u64 = 10;
 pub const MAX_ACCELERATION: u32 = 20_000;
-pub const MIN_ACCELERATION: u32 = 1;
-pub const MIN_RPM_FULL: u32 = 1;
 pub const MAX_RPM: u32 = 5_000;
-pub const MAX_STEPS: u32 = 4_000_000_000;
+// 1 year in milliseconds
+pub const MAX_DURATION_MS: u64 = 365 * 24 * 60 * 60 * 1000;
 pub const MAX_POINTS_GRAPHS: usize = 250_000;
 pub const BYTES: usize = 110;
 pub const THEME: Theme = Theme {

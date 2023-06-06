@@ -7,7 +7,8 @@ use egui::{Color32, RichText, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
-use crate::app::{BYTES, FONT_BUTTON_SIZE, MAX_ACCELERATION, THEME};
+use crate::app::{BYTES, FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_DURATION_MS, THEME};
+use crate::utils::enums::Direction;
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, Message};
 
@@ -212,35 +213,112 @@ impl TabViewer for Tabs<'_> {
             egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
                 ui.horizontal(|ui| {
                     // Setup rotation phase
-                    ui.vertical(|ui| {
-                        // Slider for RPM
-                        ui.horizontal(|ui| {
-                            ui.label("RPM:");
-                            let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm();
-                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm).clamp_to_range(true))
+                    ui.allocate_ui(egui::vec2(300.0, 280.0), |ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new("Rotation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
+                            ui.separator();
+                            // Slider for RPM
+                            ui.horizontal(|ui| {
+                                ui.label("RPM:");
+                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm();
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm).clamp_to_range(true))
+                            });
+                            // Slider for acceleration
+                            ui.horizontal(|ui| {
+                                ui.label("Acceleration:");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
+                            });
+                            // List for stepmode
+                            let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
+                            let selected_mode = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode;
+                            ui.horizontal(|ui| {
+                                ui.label("Step mode:");
+                                egui::ComboBox::from_id_source("step_mode_rotation")
+                                    .selected_text(selected_mode.to_string())
+                                    .show_ui(ui, |ui| {
+                                        for mode in modes {
+                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.step_mode, mode, mode.to_string());
+                                        }
+                                    });
+                            });
+                            // Duration for 1 direction cycle
+                            ui.horizontal(|ui| {
+                                ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                            });
+                            // Direction
+                            let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
+                            let selected_direction = self.motor.get(tab).unwrap().get_protocol().rotation.direction;
+                            ui.horizontal(|ui| {
+                                ui.label("Direction:");
+                                egui::ComboBox::from_id_source("direction_rotation")
+                                    .selected_text(selected_direction.to_string())
+                                    .show_ui(ui, |ui| {
+                                        for direction in directions {
+                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.direction, direction, direction.to_string());
+                                        }
+                                    });
+                            });
+                            // Pause before direction change
+                            ui.horizontal(|ui| {
+                                ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                            });
                         });
-                        // Slider for acceleration
-                        ui.horizontal(|ui| {
-                            ui.label("Acceleration:");
-                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
-                        });
-                        // List for stepmode
-                        let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
-                        let selected_mode = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode;
-                        ui.horizontal(|ui| {
-                            ui.label("Step mode:");
-                            egui::ComboBox::from_id_source("step_mode")
-                                .selected_text(selected_mode.to_string())
-                                .show_ui(ui, |ui| {
-                                    for mode in modes {
-                                        ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.step_mode, mode, mode.to_string());
-                                    }
-                                });
-                        });
-                        // Duration for 1 direction cycle
-                        ui.horizontal(|ui| {
-                            ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
-                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_CYCLE_DURATION).clamp_to_range(true))
+                    });
+                    ui.separator();
+                    // Setup agitation phase
+                    ui.allocate_ui(egui::vec2(300.0, 280.0), |ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new("Agitation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
+                            ui.separator();
+                            // Slider for RPM
+                            ui.horizontal(|ui| {
+                                ui.label("RPM:");
+                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm();
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm).clamp_to_range(true))
+                            });
+                            // Slider for acceleration
+                            ui.horizontal(|ui| {
+                                ui.label("Acceleration:");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
+                            });
+                            // List for stepmode
+                            let modes = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode.get_modes();
+                            let selected_mode = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode;
+                            ui.horizontal(|ui| {
+                                ui.label("Step mode:");
+                                egui::ComboBox::from_id_source("step_mode_agitation")
+                                    .selected_text(selected_mode.to_string())
+                                    .show_ui(ui, |ui| {
+                                        for mode in modes {
+                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.step_mode, mode, mode.to_string());
+                                        }
+                                    });
+                            });
+                            // Duration for 1 direction cycle
+                            ui.horizontal(|ui| {
+                                ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                            });
+                            // Direction
+                            let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
+                            let selected_direction = self.motor.get(tab).unwrap().get_protocol().agitation.direction;
+                            ui.horizontal(|ui| {
+                                ui.label("Direction:");
+                                egui::ComboBox::from_id_source("direction_agitation")
+                                    .selected_text(selected_direction.to_string())
+                                    .show_ui(ui, |ui| {
+                                        for direction in directions {
+                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.direction, direction, direction.to_string());
+                                        }
+                                    });
+                            });
+                            // Pause before direction change
+                            ui.horizontal(|ui| {
+                                ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                            });
                         });
                     });
                 });

@@ -49,7 +49,7 @@ impl Display for StepMode128 {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 pub enum Direction {
     #[default]
     Forward,
@@ -61,6 +61,15 @@ impl Direction {
         match self {
             Direction::Forward => 0,
             Direction::Backward => 1,
+        }
+    }
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Direction::Forward => write!(f, "Forward"),
+            Direction::Backward => write!(f, "Backward"),
         }
     }
 }
