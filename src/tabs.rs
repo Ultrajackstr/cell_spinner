@@ -164,7 +164,7 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 ui.horizontal_centered(|ui| {
                     // Button to send the parameters to the motor and run it. Focus is check to prevent the button from being pressed when the user is typing in the text field.
-                    ui.add_enabled_ui(is_connected && !is_running && self.main_context.memory(|mem| mem.focus().is_none()), |ui| {
+                    ui.add_enabled_ui(is_connected && !is_running && self.main_context.memory(|mem| mem.focus().is_none() && self.motor.get(tab).unwrap().get_protocol().global_duration_ms != 0), |ui| {
                         let run_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("Run")
                             .color(Color32::WHITE)).fill(THEME.green))
                             .on_hover_text("Right click to start all motors");
@@ -213,20 +213,20 @@ impl TabViewer for Tabs<'_> {
             egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
                 ui.horizontal(|ui| {
                     // Setup rotation phase
-                    ui.allocate_ui(egui::vec2(300.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Rotation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
+                            ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
                             // Slider for RPM
                             ui.horizontal(|ui| {
                                 ui.label("RPM:");
                                 let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm();
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm).clamp_to_range(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm))
                             });
                             // Slider for acceleration
                             ui.horizontal(|ui| {
                                 ui.label("Acceleration:");
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION))
                             });
                             // List for stepmode
                             let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
@@ -262,26 +262,36 @@ impl TabViewer for Tabs<'_> {
                             // Pause before direction change
                             ui.horizontal(|ui| {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                            });
+                            // Slider for rotation duration
+                            ui.horizontal(|ui| {
+                                ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                            });
+                            // Slider for pause before agitation
+                            ui.horizontal(|ui| {
+                                ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true))
                             });
                         });
                     });
                     ui.separator();
                     // Setup agitation phase
-                    ui.allocate_ui(egui::vec2(300.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Agitation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
+                            ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
                             // Slider for RPM
                             ui.horizontal(|ui| {
                                 ui.label("RPM:");
                                 let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm();
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm).clamp_to_range(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm));
                             });
                             // Slider for acceleration
                             ui.horizontal(|ui| {
                                 ui.label("Acceleration:");
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.acceleration, 1..=MAX_ACCELERATION));
                             });
                             // List for stepmode
                             let modes = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode.get_modes();
@@ -299,7 +309,7 @@ impl TabViewer for Tabs<'_> {
                             // Duration for 1 direction cycle
                             ui.horizontal(|ui| {
                                 ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
                             });
                             // Direction
                             let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
@@ -317,7 +327,31 @@ impl TabViewer for Tabs<'_> {
                             // Pause before direction change
                             ui.horizontal(|ui| {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                            });
+                            // Slider for agitation duration
+                            ui.horizontal(|ui| {
+                                ui.label("Agitation duration (ms):").on_hover_text("Duration of the agitation phase.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                            });
+                            // Slider for pause after agitation
+                            ui.horizontal(|ui| {
+                                ui.label("Pause post-agitation (ms):").on_hover_text("Pause after the agitation phase.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                            });
+                        });
+                    });
+                    ui.separator();
+                    // Setup durations
+                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
+                        ui.vertical(|ui| {
+                            ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
+                            ui.separator();
+                            // Global duration of the protocol
+                            ui.horizontal(|ui| {
+                                let color = if self.motor.get(tab).unwrap().get_protocol().global_duration_ms == 0 { THEME.red } else { THEME.text };
+                                ui.label(RichText::new("Global duration (ms):").color(color)).on_hover_text("Global duration of the protocol.");
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
                             });
                         });
                     });

@@ -1,7 +1,7 @@
-use std::error::Error;
 use std::fmt::Display;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum StepMode128 {
     #[default]
     Full,
@@ -49,7 +49,7 @@ impl Display for StepMode128 {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub enum Direction {
     #[default]
     Forward,

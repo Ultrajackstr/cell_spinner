@@ -1,7 +1,9 @@
+use serde::{Serialize, Deserialize};
+use serde::ser::SerializeStruct;
 use crate::app::{BYTES, MAX_RPM};
 use crate::utils::enums::{Direction, StepMode128};
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Rotation {
     pub rpm: u32,
     pub acceleration: u32,
@@ -10,6 +12,20 @@ pub struct Rotation {
     pub steps_for_one_direction_cycle: u64,
     pub direction: Direction,
     pub pause_before_direction_change_ms: u64,
+}
+
+impl Default for Rotation {
+    fn default() -> Self {
+        Self {
+            rpm: 1,
+            acceleration: 1,
+            step_mode: StepMode128::Full,
+            duration_of_one_direction_cycle_ms: 0,
+            steps_for_one_direction_cycle: 0,
+            direction: Direction::Forward,
+            pause_before_direction_change_ms: 0,
+        }
+    }
 }
 
 impl Rotation {
@@ -23,6 +39,10 @@ impl Rotation {
             direction,
             pause_before_direction_change_ms,
         }
+    }
+
+    pub fn get_min_duration(&self) -> u64 {
+        self.duration_of_one_direction_cycle_ms + self.pause_before_direction_change_ms
     }
 
     pub fn max_rpm(&self) -> u32 {
@@ -77,7 +97,7 @@ impl Rotation {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, Serialize, Deserialize)]
 pub struct Protocol {
     pub rotation: Rotation,
     pub rotation_duration_ms: u64,
@@ -112,6 +132,10 @@ impl Protocol {
             pause_after_agitation_ms: 1000,
             global_duration_ms: 60_000,
         }
+    }
+
+    pub fn duration(&self) -> u64 {
+        self.rotation_duration_ms + self.pause_before_agitation_ms + self.agitation_duration_ms + self.pause_after_agitation_ms
     }
 
     /// Protocol to bytes for serial communication

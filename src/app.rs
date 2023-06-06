@@ -1,18 +1,24 @@
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use catppuccin_egui::{LATTE, Theme};
 use chrono::Local;
 use dashmap::DashMap;
+use dirs::home_dir;
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_dock::{Style, Tree};
 use egui_toast::{Toast, ToastKind, Toasts};
+use rfd::FileDialog;
 
 use crate::tabs::Tabs;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
+use crate::utils::protocols::Protocol;
 use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
@@ -64,6 +70,7 @@ pub struct CellSpinner {
     absolute_tab_counter: usize,
     added_tabs: Vec<usize>,
     can_tab_close: bool,
+    path_config: PathBuf,
 
 }
 
@@ -93,6 +100,7 @@ impl Default for CellSpinner {
             can_tab_close: false,
             motor: Arc::new(Default::default()),
             motor_name: Default::default(),
+            path_config: home_dir().unwrap(),
         }
     }
 }
@@ -257,6 +265,26 @@ impl CellSpinner {
                 });
             });
     }
+
+    // Export the configuration HashMap to a JSON file.
+    fn export_configuration(&mut self, tab: &usize) {
+        let mut fn_export = || -> Result<(), Error> {
+            self.path_config = FileDialog::new()
+                .add_filter("json", &["json"])
+                .save_file()
+                .unwrap_or_default();
+            let mut file = File::create(&self.path_config)?;
+            let json = serde_json::to_string_pretty(self.motor.get(tab).unwrap().get_protocol()).unwrap();
+            file.write_all(json.as_bytes()).unwrap();
+            let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, None, 3, false);
+            self.message_handler(message);
+            Ok(())
+        };
+        if let Err(err) = fn_export() {
+            let message: Message = Message::new(ToastKind::Error, "Error while exporting the configuration", Some(err), None, 3, false);
+            self.message_handler(message);
+        }
+    }
 }
 
 impl eframe::App for CellSpinner {
@@ -272,12 +300,12 @@ impl eframe::App for CellSpinner {
         // Toasts
         self.height = frame.info().window_info.size.y;
         self.width = frame.info().window_info.size.x;
-        self.toast_position_x = 0.0;
-        self.toast_position_y = self.height - 30.5;
+        self.toast_position_x = self.width - 10.0;
+        self.toast_position_y = self.height - 10.0;
         let mut toasts = Toasts::new()
             .anchor((self.toast_position_x, self.toast_position_y))
             .direction(egui::Direction::BottomUp)
-            .align_to_end(false)
+            .align_to_end(true)
             .progress_bar(THEME.mauve, 3.0, THEME.crust);
 
         // Check if new toasts have been sent.
@@ -332,7 +360,7 @@ impl eframe::App for CellSpinner {
                         // Buttons to save and load config.
                         if ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Save config").fill(THEME.surface0))
                             .clicked() {
-                            // self.export_configuration(&tab);
+                            self.export_configuration(&tab);
                         }
                         ui.separator();
                         ui.add_enabled_ui(!is_running, |ui| {
