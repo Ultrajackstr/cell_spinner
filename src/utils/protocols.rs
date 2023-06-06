@@ -29,8 +29,8 @@ impl Rotation {
         Self {
             rpm: 1000,
             accel: 6000,
-            step_mode: StepMode128::M8,
-            duration_of_one_direction_cycle_ms: 0,
+            step_mode: StepMode128::Full,
+            duration_of_one_direction_cycle_ms: 4000,
             steps_for_one_direction_cycle: 0,
             direction: Direction::Forward,
             pause_before_direction_change_ms: 1000,

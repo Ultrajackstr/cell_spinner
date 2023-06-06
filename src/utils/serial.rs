@@ -102,7 +102,7 @@ impl Serial {
                             dbg!(&buf);
                             let state: StepperState = StepperState::from(&buf);
                             let origin = Some(format!("Port: {}", port_name));
-                            let error = Some(anyhow!("Received: {} ({:?})", String::from_utf8(buf.to_vec()).unwrap(), &buf));
+                            let error = Some(anyhow!("Received: \"{}\" {:?}", String::from_utf8(buf.to_vec()).unwrap(), &buf));
                             match state {
                                 StepperState::CommandReceived => {}
                                 StepperState::Finished => {
@@ -136,10 +136,12 @@ impl Serial {
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OscillationRotation => {
-                                    todo!()
+                                    let message: Message = Message::new(ToastKind::Info, "Oscillation rotation", None, origin, 2, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::OscillationAgitation => {
-                                    todo!()
+                                    let message: Message = Message::new(ToastKind::Info, "Oscillation agitation", None, origin, 2, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::Invalid => {
                                     let message: Message = Message::new(ToastKind::Error, "Invalid state", error, None, 5, false);
@@ -167,6 +169,8 @@ impl Serial {
             if let Some(port) = port.lock().unwrap().as_mut() {
                 port.clear(ClearBuffer::All).ok();
                 port.write_all(&bytes).ok();
+                // port.read_exact(&mut [0u8; 3]).ok();
+                // port.clear(ClearBuffer::All).ok();
             }
         });
     }
