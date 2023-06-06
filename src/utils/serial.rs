@@ -5,9 +5,11 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{bail, Error};
+use egui_toast::ToastKind;
 use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
 
 use crate::app::THREAD_SLEEP;
+use crate::utils::enums::StepperState;
 use crate::utils::structs::Message;
 
 pub struct Serial {
@@ -90,21 +92,76 @@ impl Serial {
         let data = self.data.clone();
         let port = self.port.clone();
         let is_running = is_running.clone();
+        let port_name = self.port_name.clone();
         thread::spawn(move || {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
                 // Check if there is a byte to read
                 let is_byte = match port.lock().unwrap().as_mut().unwrap().bytes_to_read() {
                     Ok(n) => n,
-                    Err(_) => return,
+                    Err(err) => {
+                        let error = Error::new(err);
+                        let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", Some(error), Some(format!("Port: {}", port_name)), 5, false);
+                        message_tx.as_ref().unwrap().send(message).unwrap();
+                        return;
+                    }
                 };
                 if is_byte == 3 {
                     buf = [0u8; 3];
                     match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
                         Ok(_) => {
                             *data.lock().unwrap() = buf;
+                            let state: StepperState = StepperState::from(&buf);
+                            match state {
+                                StepperState::Finished => {
+                                    let message: Message = Message::new(ToastKind::Success, "Finished", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::EmergencyStop => {
+                                    let message: Message = Message::new(ToastKind::Error, "Emergency stop", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::OpenLoad => {
+                                    let message: Message = Message::new(ToastKind::Error, "Open load", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::OverCurrent => {
+                                    let message: Message = Message::new(ToastKind::Error, "Over current", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::OverHeat => {
+                                    let message: Message = Message::new(ToastKind::Error, "Over heat", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::ParseError => {
+                                    let message: Message = Message::new(ToastKind::Error, "Parse error", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::OscillationRotation => {
+                                    todo!()
+                                }
+                                StepperState::OscillationAgitation => {
+                                    todo!()
+                                }
+                                StepperState::Invalid => {
+                                    let message: Message = Message::new(ToastKind::Error, "Invalid state", None, None, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                            }
                         }
-                        Err(_) => return,
+                        Err(err) => {
+                            let error = Error::new(err);
+                            let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", Some(error), Some(format!("Port: {}", port_name)), 5, false);
+                            message_tx.as_ref().unwrap().send(message).unwrap();
+                            return;
+                        }
                     }
                 } else {
                     port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::Input).unwrap()

@@ -168,12 +168,12 @@ impl TabViewer for Tabs<'_> {
                             .color(Color32::WHITE)).fill(THEME.green))
                             .on_hover_text("Right click to start all motors");
                         if run_response.clicked() {
-                            self.motor.get_mut(tab).unwrap().start_motor();
+                            self.motor.get_mut(tab).unwrap().start_motor(self.channels.message_tx.clone());
                         } else if run_response.secondary_clicked() {
                             // Start all the connected motors that are not running
                             self.motor.iter_mut().for_each(|mut motor| {
                                 if motor.get_is_connected() && !motor.get_is_running() {
-                                    motor.start_motor();
+                                    motor.start_motor(self.channels.message_tx.clone());
                                 }
                             });
                         }
