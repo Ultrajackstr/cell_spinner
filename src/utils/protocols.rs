@@ -1,3 +1,4 @@
+use crate::app::BYTES;
 use crate::utils::enums::{Direction, StepMode128};
 
 #[derive(Debug, Copy, Clone, Default)]
@@ -24,6 +25,31 @@ impl Rotation {
         }
     }
 
+    fn test_rotation() -> Self {
+        Self {
+            rpm: 100,
+            accel: 6000,
+            step_mode: StepMode128::M8,
+            duration_of_one_direction_cycle_ms: 4000,
+            steps_for_one_direction_cycle: 0,
+            direction: Direction::Forward,
+            pause_before_direction_change_ms: 1000,
+        }
+    }
+
+    fn test_agitation() -> Self {
+        Self {
+            rpm: 2000,
+            accel: 6000,
+            step_mode: StepMode128::Full,
+            duration_of_one_direction_cycle_ms: 4000,
+            steps_for_one_direction_cycle: 0,
+            direction: Direction::Forward,
+            pause_before_direction_change_ms: 1000,
+        }
+    }
+
+
     /// Rotation to bytes for serial communication
     pub fn to_bytes(&self) -> [u8; 34] {
         let mut bytes = [0u8; 34];
@@ -38,7 +64,7 @@ impl Rotation {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Protocol {
     pub rotation: Rotation,
     pub rotation_duration_ms: u64,
@@ -49,19 +75,6 @@ pub struct Protocol {
     pub global_duration_ms: u64,
 }
 
-impl Default for Protocol {
-    fn default() -> Self {
-        Self {
-            rotation: Rotation::default(),
-            rotation_duration_ms: 0,
-            pause_before_agitation_ms: 0,
-            agitation: Rotation::default(),
-            agitation_duration_ms: 0,
-            pause_after_agitation_ms: 0,
-            global_duration_ms: 0,
-        }
-    }
-}
 
 impl Protocol {
     pub fn new(rotation: Rotation, rotation_duration_ms: u64, pause_before_agitation_ms: u64, agitation: Rotation, agitation_duration_ms: u64, pause_after_agitation_ms: u64, global_duration_ms: u64) -> Self {
@@ -76,16 +89,30 @@ impl Protocol {
         }
     }
 
+    pub fn test_protocol() -> Self {
+        Self {
+            rotation: Rotation::test_rotation(),
+            rotation_duration_ms: 10000,
+            pause_before_agitation_ms: 1000,
+            agitation: Rotation::test_agitation(),
+            agitation_duration_ms: 10000,
+            pause_after_agitation_ms: 1000,
+            global_duration_ms: 100000,
+        }
+    }
+
     /// Protocol to bytes for serial communication
-    pub fn to_bytes(&self) -> [u8; 108] {
-        let mut bytes = [0u8; 108];
-        bytes[0..34].copy_from_slice(&self.rotation.to_bytes());
-        bytes[34..42].copy_from_slice(&self.rotation_duration_ms.to_le_bytes());
-        bytes[42..50].copy_from_slice(&self.pause_before_agitation_ms.to_le_bytes());
-        bytes[50..84].copy_from_slice(&self.agitation.to_bytes());
-        bytes[84..92].copy_from_slice(&self.agitation_duration_ms.to_le_bytes());
-        bytes[92..100].copy_from_slice(&self.pause_after_agitation_ms.to_le_bytes());
-        bytes[100..108].copy_from_slice(&self.global_duration_ms.to_le_bytes());
-        bytes
+    pub fn bytes_vec_to_send(&self) -> Vec<u8> {
+        let mut bytes = [0u8; BYTES];
+        bytes[0] = b'a';
+        bytes[1..35].copy_from_slice(&self.rotation.to_bytes());
+        bytes[35..43].copy_from_slice(&self.rotation_duration_ms.to_le_bytes());
+        bytes[43..51].copy_from_slice(&self.pause_before_agitation_ms.to_le_bytes());
+        bytes[51..85].copy_from_slice(&self.agitation.to_bytes());
+        bytes[85..93].copy_from_slice(&self.agitation_duration_ms.to_le_bytes());
+        bytes[93..101].copy_from_slice(&self.pause_after_agitation_ms.to_le_bytes());
+        bytes[101..109].copy_from_slice(&self.global_duration_ms.to_le_bytes());
+        bytes[109] = b'z';
+        bytes.to_vec()
     }
 }

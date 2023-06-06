@@ -96,13 +96,16 @@ impl Motor {
     }
 
     pub fn start_motor(&mut self, message_tx: Option<Sender<Message>>) {
+        self.is_running.store(true, std::sync::atomic::Ordering::Relaxed);
         self.start_run_time();
         self.serial.listen_to_serial_port(&self.is_running, message_tx);
-        todo!();
+        let test_protocol = Protocol::test_protocol();
+        self.serial.send_bytes(test_protocol.bytes_vec_to_send());
     }
 
     pub fn stop_motor(&mut self) {
-        todo!();
+        self.is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+        //TODO: finish
     }
 
     pub fn start_run_time(&mut self) {

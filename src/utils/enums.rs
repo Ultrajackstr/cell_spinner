@@ -43,6 +43,7 @@ impl Direction {
 }
 
 pub enum StepperState {
+    CommandReceived,
     Finished,
     EmergencyStop,
     OpenLoad,
@@ -57,6 +58,7 @@ pub enum StepperState {
 impl From<&[u8; 3]> for StepperState {
     fn from(bytes: &[u8; 3]) -> Self {
         match bytes {
+            [b'o', b'k', b'!'] => StepperState::CommandReceived,
             [b'f', b'i', b'n'] => StepperState::Finished,
             [b'e', b'm', b'r'] => StepperState::EmergencyStop,
             [b'e', b'r', b'1'] => StepperState::OpenLoad,

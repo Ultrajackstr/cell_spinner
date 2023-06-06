@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
@@ -12,20 +13,10 @@ use crate::app::THREAD_SLEEP;
 use crate::utils::enums::StepperState;
 use crate::utils::structs::Message;
 
+#[derive(Default)]
 pub struct Serial {
     port_name: String,
     port: Arc<Mutex<Option<Box<dyn SerialPort>>>>,
-    data: Arc<Mutex<[u8; 3]>>,
-}
-
-impl Default for Serial {
-    fn default() -> Self {
-        Self {
-            port_name: String::new(),
-            port: Arc::new(Mutex::new(None)),
-            data: Arc::new(Mutex::new([0u8; 3])),
-        }
-    }
 }
 
 impl Serial {
@@ -36,7 +27,6 @@ impl Serial {
         Ok(Self {
             port_name: port_name.into(),
             port,
-            data: Arc::new(Mutex::new([0u8; 3])),
         })
     }
 
@@ -89,7 +79,6 @@ impl Serial {
     }
 
     pub fn listen_to_serial_port(&self, is_running: &Arc<AtomicBool>, message_tx: Option<Sender<Message>>) {
-        let data = self.data.clone();
         let port = self.port.clone();
         let is_running = is_running.clone();
         let port_name = self.port_name.clone();
@@ -110,9 +99,10 @@ impl Serial {
                     buf = [0u8; 3];
                     match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
                         Ok(_) => {
-                            *data.lock().unwrap() = buf;
+                            dbg!(&buf);
                             let state: StepperState = StepperState::from(&buf);
                             match state {
+                                StepperState::CommandReceived => {}
                                 StepperState::Finished => {
                                     let message: Message = Message::new(ToastKind::Success, "Finished", None, None, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
@@ -163,20 +153,19 @@ impl Serial {
                             return;
                         }
                     }
-                } else {
-                    port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::Input).unwrap()
                 }
+                thread::sleep(Duration::from_millis(THREAD_SLEEP));
             }
-            thread::sleep(Duration::from_millis(THREAD_SLEEP));
         });
     }
 
-    pub fn send_bytes(&self, bytes: &[u8]) -> Result<(), Error> {
-        if let Some(port) = self.port.lock().unwrap().as_mut() {
-            port.write_all(bytes)?;
-            Ok(())
-        } else {
-            bail!("Port is not connected")
-        }
+    pub fn send_bytes(&self, bytes: Vec<u8>) {
+        let port = self.port.clone();
+        thread::spawn(move || {
+            if let Some(port) = port.lock().unwrap().as_mut() {
+                port.clear(ClearBuffer::All).ok();
+                port.write_all(&bytes).ok();
+            }
+        });
     }
 }
