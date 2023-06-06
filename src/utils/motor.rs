@@ -74,6 +74,10 @@ impl Motor {
     pub fn get_protocol(&self) -> &Protocol {
         &self.protocol
     }
+    
+    pub fn get_protocol_mut(&mut self) -> &mut Protocol {
+        &mut self.protocol
+    }
 
     pub fn get_is_running(&self) -> bool {
         self.is_running.load(std::sync::atomic::Ordering::Relaxed)
@@ -102,7 +106,7 @@ impl Motor {
         self.serial.listen_to_serial_port(&self.is_running, message_tx);
         let rotation: Rotation = Rotation::new(60, 6000, StepMode128::M16, 5000, 0, Direction::Forward, 0);
         let agitation: Rotation = Rotation::new(4000, 10_000, StepMode128::Full, 5000, 0, Direction::Forward, 0);
-        let protocol: Protocol = Protocol::new(rotation, 10_000, 0, agitation, 10_000, 0, 6_000);
+        let protocol: Protocol = Protocol::new(rotation, 10_000, 0, agitation, 10_000, 0, 30_000);
         self.protocol = protocol;
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }

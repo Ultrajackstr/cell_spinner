@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::Display;
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default, Eq, PartialEq)]
 pub enum StepMode128 {
     #[default]
     Full,
@@ -25,6 +25,26 @@ impl StepMode128 {
             StepMode128::M32 => 5,
             StepMode128::M64 => 6,
             StepMode128::M128 => 7,
+        }
+    }
+
+    pub fn get_modes(&self) -> Vec<StepMode128> {
+        vec![StepMode128::Full, StepMode128::M2, StepMode128::M4, StepMode128::M8, StepMode128::M16, StepMode128::M32, StepMode128::M64, StepMode128::M128]
+    }
+}
+
+
+impl Display for StepMode128 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            StepMode128::Full => write!(f, "Full"),
+            StepMode128::M2 => write!(f, "1/2"),
+            StepMode128::M4 => write!(f, "1/4"),
+            StepMode128::M8 => write!(f, "1/8"),
+            StepMode128::M16 => write!(f, "1/16"),
+            StepMode128::M32 => write!(f, "1/32"),
+            StepMode128::M64 => write!(f, "1/64"),
+            StepMode128::M128 => write!(f, "1/128"),
         }
     }
 }

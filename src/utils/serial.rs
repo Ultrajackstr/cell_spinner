@@ -136,17 +136,20 @@ impl Serial {
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OscillationRotation => {
-                                    let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
-                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    //todo
+                                    // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
+                                    // message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::OscillationAgitation => {
-                                    let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
-                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    //todo
+                                    // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
+                                    // message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::Invalid => {
-                                    let message: Message = Message::new(ToastKind::Error, &message, error, None, 5, false);
-                                    message_tx.as_ref().unwrap().send(message).unwrap();
-                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                    // let message: Message = Message::new(ToastKind::Error, &message, error, None, 5, false);
+                                    // message_tx.as_ref().unwrap().send(message).unwrap();
+                                    // is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                    port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::All).ok();
                                 }
                             }
                         }
@@ -158,9 +161,6 @@ impl Serial {
                         }
                     }
                 }
-                // else {
-                //     port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::All).ok();
-                // }
                 thread::sleep(Duration::from_millis(THREAD_SLEEP));
             }
         });

@@ -7,7 +7,7 @@ use egui::{Color32, RichText, Ui, WidgetText};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
-use crate::app::{BYTES, FONT_BUTTON_SIZE, THEME};
+use crate::app::{BYTES, FONT_BUTTON_SIZE, MAX_ACCELERATION, THEME};
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, Message};
 
@@ -204,6 +204,46 @@ impl TabViewer for Tabs<'_> {
                         motor.disconnect();
                     });
                 }
+            });
+        });
+        ui.separator();
+        ////// SETUP //////
+        ui.add_enabled_ui(is_connected && !is_running, |ui| {
+            egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    // Setup rotation phase
+                    ui.vertical(|ui| {
+                        // Slider for RPM
+                        ui.horizontal(|ui| {
+                            ui.label("RPM:");
+                            let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm();
+                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm).clamp_to_range(true))
+                        });
+                        // Slider for acceleration
+                        ui.horizontal(|ui| {
+                            ui.label("Acceleration:");
+                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION).clamp_to_range(true))
+                        });
+                        // List for stepmode
+                        let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
+                        let selected_mode = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode;
+                        ui.horizontal(|ui| {
+                            ui.label("Step mode:");
+                            egui::ComboBox::from_id_source("step_mode")
+                                .selected_text(selected_mode.to_string())
+                                .show_ui(ui, |ui| {
+                                    for mode in modes {
+                                        ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.step_mode, mode, mode.to_string());
+                                    }
+                                });
+                        });
+                        // Duration for 1 direction cycle
+                        ui.horizontal(|ui| {
+                            ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
+                            ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_CYCLE_DURATION).clamp_to_range(true))
+                        });
+                    });
+                });
             });
         });
     }
