@@ -1,11 +1,12 @@
+use std::cmp::max;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
 
-use anyhow::Error;
+use anyhow::{bail, Error};
 
-use crate::app::THREAD_SLEEP;
+use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, THREAD_SLEEP};
 use crate::utils::enums::{Direction, StepMode128};
 use crate::utils::graph::Graph;
 use crate::utils::protocols::{Protocol, Rotation};
@@ -45,6 +46,12 @@ impl Motor {
             serial,
             graph: Arc::new(Mutex::new(Graph::default())),
         })
+    }
+
+    pub fn new_with_protocol(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol) -> Result<Self, Error> {
+        let mut motor = Self::new(serial_port, motor_name, already_connected_ports)?;
+        motor.set_protocol(protocol);
+        Ok(motor)
     }
 
     pub fn get_serial(&self) -> &Serial {
@@ -127,5 +134,27 @@ impl Motor {
                 std::thread::sleep(Duration::from_millis(THREAD_SLEEP));
             }
         });
+    }
+
+    pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {
+        // Check if the protocol is valid
+        if protocol.rotation.acceleration == 0 || protocol.agitation.acceleration == 0 {
+            bail!("The acceleration of the rotation or agitation is 0");
+        }
+        if protocol.rotation.acceleration > MAX_ACCELERATION || protocol.agitation.acceleration > MAX_ACCELERATION {
+            bail!("The acceleration of the rotation or agitation is too high");
+        }
+        if protocol.rotation.rpm > protocol.rotation.max_rpm_for_stepmode() || protocol.agitation.rpm > protocol.agitation.max_rpm_for_stepmode() {
+            bail!("The rpm of the rotation or agitation is higher than the max rpm");
+        }
+        if protocol.rotation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS || protocol.agitation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS
+            || protocol.rotation.pause_before_direction_change_ms > MAX_DURATION_MS || protocol.agitation.pause_before_direction_change_ms > MAX_DURATION_MS
+            || protocol.global_duration_ms > MAX_DURATION_MS || protocol.rotation_duration_ms > MAX_DURATION_MS || protocol.agitation_duration_ms > MAX_DURATION_MS
+            || protocol.pause_before_agitation_ms > MAX_DURATION_MS || protocol.pause_after_agitation_ms > MAX_DURATION_MS
+        {
+            bail!("Some duration is too high");
+        }
+        self.protocol = protocol;
+        Ok(())
     }
 }

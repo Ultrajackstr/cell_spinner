@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufReader, Write};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
@@ -276,12 +276,59 @@ impl CellSpinner {
             let mut file = File::create(&self.path_config)?;
             let json = serde_json::to_string_pretty(self.motor.get(tab).unwrap().get_protocol()).unwrap();
             file.write_all(json.as_bytes()).unwrap();
-            let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, None, 3, false);
+            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, Some(current_motor), 3, false);
             self.message_handler(message);
             Ok(())
         };
         if let Err(err) = fn_export() {
-            let message: Message = Message::new(ToastKind::Error, "Error while exporting the configuration", Some(err), None, 3, false);
+            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let message: Message = Message::new(ToastKind::Error, "Error while exporting the configuration", Some(err), Some(current_motor), 3, false);
+            self.message_handler(message);
+        }
+    }
+
+    // Import the configuration from a JSON file.
+    fn import_configuration(&mut self, tab: &usize, import_for_all: bool) {
+        if self.motor.get(tab).unwrap().get_is_running() {
+            return;
+        }
+        let mut fn_import = || -> Result<(), Error> {
+            self.path_config = FileDialog::new()
+                .add_filter("json", &["json"])
+                .pick_file()
+                .unwrap_or_default();
+            let file = File::open(&self.path_config)?;
+            let reader = BufReader::new(file);
+            let protocol: Protocol = serde_json::from_reader(reader)?;
+            if import_for_all {
+                let mut errors_import: Vec<(String, Error)> = vec![];
+                self.motor.iter_mut().for_each(|mut motor| match motor.import_protocol(protocol) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        errors_import.push((motor.get_name().to_string(), err));
+                    }
+                });
+                if !errors_import.is_empty() {
+                    for (motor_name, err) in errors_import.into_iter() {
+                        let message: Message = Message::new(ToastKind::Error, "Error while importing the configuration", Some(err), Some(motor_name), 3, false);
+                        self.message_handler(message);
+                    }
+                } else {
+                    let message: Message = Message::new(ToastKind::Info, "Configuration imported for all stopped motors!", None, None, 3, false);
+                    self.message_handler(message);
+                }
+            } else {
+                self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
+                let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+                let message: Message = Message::new(ToastKind::Info, "Configuration imported!", None, Some(current_motor), 3, false);
+                self.message_handler(message);
+            }
+            Ok(())
+        };
+        if let Err(err) = fn_import() {
+            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let message: Message = Message::new(ToastKind::Error, "Error while importing the configuration", Some(err), Some(current_motor), 3, false);
             self.message_handler(message);
         }
     }
@@ -348,7 +395,6 @@ impl eframe::App for CellSpinner {
                             tab = *active_tab.1;
                         };
                         let is_running = self.motor.get(&tab).unwrap().get_is_running();
-                        let is_any_running = self.motor.iter().any(|v| v.get_is_running());
                         // Title
                         let response_heading = ui.add(egui::Label::new(RichText::new("Cell Spinner").heading())
                             .sense(Sense::click()))
@@ -367,10 +413,9 @@ impl eframe::App for CellSpinner {
                             let import_response = ui.add_sized(FONT_BUTTON_SIZE.button_top_panel, egui::Button::new("Import config").fill(THEME.surface0))
                                 .on_hover_text("Right click to import config for all the motors");
                             if import_response.clicked() {
-                                // self.import_configuration(&tab);
+                                self.import_configuration(&tab, false);
                             } else if import_response.secondary_clicked() {
-                                // self.import_for_all_motors = true;
-                                // self.import_configuration(&tab);
+                                self.import_configuration(&tab, true);
                             }
                         });
                         // Info message

@@ -45,7 +45,7 @@ impl Rotation {
         self.duration_of_one_direction_cycle_ms + self.pause_before_direction_change_ms
     }
 
-    pub fn max_rpm(&self) -> u32 {
+    pub fn max_rpm_for_stepmode(&self) -> u32 {
         match self.step_mode {
             StepMode128::Full => MAX_RPM,
             StepMode128::M2 => MAX_RPM / 2,

@@ -54,8 +54,9 @@ impl Tabs<'_> {
         let motors = self.motor.clone();
         let channels = self.channels.message_tx.clone();
         let already_connected_ports = self.already_connected_ports.clone();
+        let current_protocol = *self.motor.get(&tab).unwrap().get_protocol();
         thread::spawn(move || {
-            let motor = match Motor::new(serial_port, motor_name, already_connected_ports) {
+            let motor = match Motor::new_with_protocol(serial_port, motor_name, already_connected_ports, current_protocol) {
                 Ok(motor) => motor,
                 Err(err) => {
                     channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Tab {}", tab)), 3, false)).ok();
@@ -220,7 +221,7 @@ impl TabViewer for Tabs<'_> {
                             // Slider for RPM
                             ui.horizontal(|ui| {
                                 ui.label("RPM:");
-                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm();
+                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
                                 ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm))
                             });
                             // Slider for acceleration
@@ -285,7 +286,7 @@ impl TabViewer for Tabs<'_> {
                             // Slider for RPM
                             ui.horizontal(|ui| {
                                 ui.label("RPM:");
-                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm();
+                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm_for_stepmode();
                                 ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm));
                             });
                             // Slider for acceleration

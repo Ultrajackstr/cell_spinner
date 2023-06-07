@@ -130,11 +130,6 @@ impl Serial {
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
-                                StepperState::ParseError => {
-                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
-                                    message_tx.as_ref().unwrap().send(message).unwrap();
-                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
-                                }
                                 StepperState::OscillationRotation => {
                                     //todo
                                     // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
@@ -144,6 +139,16 @@ impl Serial {
                                     //todo
                                     // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
                                     // message_tx.as_ref().unwrap().send(message).unwrap();
+                                }
+                                StepperState::StepgenAgitationError => {
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+                                }
+                                StepperState::StepgenRotationError => {
+                                    let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::Invalid => {
                                     // let message: Message = Message::new(ToastKind::Error, &message, error, None, 5, false);

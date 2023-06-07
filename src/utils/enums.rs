@@ -1,4 +1,5 @@
 use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Copy, Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
@@ -83,9 +84,10 @@ pub enum StepperState {
     OpenLoad,
     OverCurrent,
     OverHeat,
-    ParseError,
     OscillationRotation,
     OscillationAgitation,
+    StepgenRotationError,
+    StepgenAgitationError,
     Invalid,
 }
 
@@ -98,9 +100,10 @@ impl From<&[u8; 3]> for StepperState {
             [b'e', b'r', b'1'] => StepperState::OpenLoad,
             [b'e', b'r', b'2'] => StepperState::OverCurrent,
             [b'e', b'r', b'3'] => StepperState::OverHeat,
-            [b'e', b'r', b'p'] => StepperState::ParseError,
             [b'o', b's', b'r'] => StepperState::OscillationRotation,
             [b'o', b's', b'a'] => StepperState::OscillationAgitation,
+            [b'e', b'r', b'p'] => StepperState::StepgenRotationError,
+            [b'e', b'a', b'p'] => StepperState::StepgenAgitationError,
             _ => StepperState::Invalid,
         }
     }
@@ -115,9 +118,10 @@ impl Display for StepperState {
             StepperState::OpenLoad => write!(f, "Open load"),
             StepperState::OverCurrent => write!(f, "Over current"),
             StepperState::OverHeat => write!(f, "Over heat"),
-            StepperState::ParseError => write!(f, "Parse error"),
             StepperState::OscillationRotation => write!(f, "Oscillation rotation"),
             StepperState::OscillationAgitation => write!(f, "Oscillation agitation"),
+            StepperState::StepgenRotationError => write!(f, "Error generating rotation steps"),
+            StepperState::StepgenAgitationError => write!(f, "Error generating agitation steps"),
             StepperState::Invalid => write!(f, "Invalid"),
         }
     }
