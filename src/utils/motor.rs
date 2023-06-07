@@ -2,9 +2,11 @@ use std::cmp::max;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
-use std::time::Duration;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::{bail, Error};
+use fugit::TimerInstantU64;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, THREAD_SLEEP};
 use crate::utils::enums::{Direction, StepMode128};
@@ -19,7 +21,7 @@ pub struct Motor {
     run_time_ms: Arc<Mutex<Duration>>,
     protocol: Protocol,
     serial: Serial,
-    graph: Arc<Mutex<Graph>>,
+    graph: Graph,
 }
 
 impl Default for Motor {
@@ -30,7 +32,7 @@ impl Default for Motor {
             run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
             protocol: Protocol::default(),
             serial: Serial::default(),
-            graph: Arc::new(Mutex::new(Graph::default())),
+            graph: Graph::default(),
         }
     }
 }
@@ -44,7 +46,7 @@ impl Motor {
             run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
             protocol: Protocol::default(),
             serial,
-            graph: Arc::new(Mutex::new(Graph::default())),
+            graph: Graph::default(),
         })
     }
 
@@ -173,5 +175,28 @@ impl Motor {
         }
         self.protocol = protocol;
         Ok(())
+    }
+
+    pub fn generate_graph_rotation(&self) {
+        let points_rotation = self.graph.get_mutex_rotation_points();
+        let protocol = self.protocol;
+        // Rotation
+        thread::spawn(move || {
+            let mut stepgen = protocol.rotation.create_stepgen();
+            let mut instant = Instant::now();
+            let mut prev_x = 0;
+            points_rotation.lock().unwrap().clear();
+            points_rotation.lock().unwrap().push(  [0.0, 0.0]);
+            let now = |instant: Instant, prev_x: u64| -> TimerInstantU64<1000> {
+                TimerInstantU64::from_ticks(instant.elapsed().as_millis() as u64 + (prev_x as f64 * 0.001) as u64)
+            };
+            while let Some(delay) = stepgen.next_delay(Some(now(instant, prev_x))) {
+                prev_x += delay;
+                instant = Instant::now();
+                let rpm_for_graph = 300_000.0 / protocol.rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
+                points_rotation.lock().unwrap().push([prev_x as f64 * 0.001, rpm_for_graph]);
+            }
+        });
+        //TODO: finish
     }
 }

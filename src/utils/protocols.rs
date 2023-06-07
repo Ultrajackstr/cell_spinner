@@ -1,5 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde::ser::SerializeStruct;
+
 use crate::app::{BYTES, MAX_RPM};
 use crate::utils::enums::{Direction, StepMode128};
 
@@ -80,6 +81,13 @@ impl Rotation {
             direction: Direction::Forward,
             pause_before_direction_change_ms: 0,
         }
+    }
+
+    pub fn create_stepgen(&self) -> stepgen_new::x64::Stepgen<1000> {
+        let target_rpm = self.rpm * self.step_mode.get_multiplier();
+        let target_accel = self.acceleration * self.step_mode.get_multiplier();
+        stepgen_new::x64::Stepgen::new(target_rpm, target_accel,
+                                       self.steps_for_one_direction_cycle, self.duration_of_one_direction_cycle_ms).unwrap()
     }
 
 

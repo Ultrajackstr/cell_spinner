@@ -379,6 +379,8 @@ impl TabViewer for Tabs<'_> {
                 });
             });
             ui.separator();
+            ///// Graphs /////
+
         });
     }
 

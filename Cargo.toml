@@ -36,6 +36,9 @@ anyhow = "1.0.71"
 dashmap = "5.4.0"
 serialport = "4.2.1"
 rfd = "0.11.4"
+stepgen_new = { path = "../stepgen_new" }
+#stepgen_new = { git = "ssh://git@github.com/Ultrajackstr/stepgen_new.git", branch = "time" }
+fugit = "0.3.7"
 
 catppuccin-egui = "3.0.0"
 dirs = "5.0.1"

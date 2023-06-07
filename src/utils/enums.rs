@@ -32,6 +32,19 @@ impl StepMode128 {
     pub fn get_modes(&self) -> Vec<StepMode128> {
         vec![StepMode128::Full, StepMode128::M2, StepMode128::M4, StepMode128::M8, StepMode128::M16, StepMode128::M32, StepMode128::M64, StepMode128::M128]
     }
+
+    pub fn get_multiplier(&self) -> u32 {
+        match self {
+            StepMode128::Full => 1,
+            StepMode128::M2 => 2,
+            StepMode128::M4 => 4,
+            StepMode128::M8 => 8,
+            StepMode128::M16 => 16,
+            StepMode128::M32 => 32,
+            StepMode128::M64 => 64,
+            StepMode128::M128 => 128,
+        }
+    }
 }
 
 
