@@ -1,6 +1,6 @@
 use std::cmp::max;
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use anyhow::{bail, Error};
 use fugit::TimerInstantU64;
 
-use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, THREAD_SLEEP};
+use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THREAD_SLEEP};
 use crate::utils::enums::{Direction, StepMode128};
 use crate::utils::graph::Graph;
 use crate::utils::protocols::{Protocol, Rotation};
@@ -50,9 +50,10 @@ impl Motor {
         })
     }
 
-    pub fn new_with_protocol(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol) -> Result<Self, Error> {
+    pub fn new_with_protocol_and_graph(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol, graph: Graph) -> Result<Self, Error> {
         let mut motor = Self::new(serial_port, motor_name, already_connected_ports)?;
         motor.set_protocol(protocol);
+        motor.set_graph(graph);
         Ok(motor)
     }
 
@@ -89,19 +90,19 @@ impl Motor {
     }
 
     pub fn get_is_running(&self) -> bool {
-        self.is_running.load(std::sync::atomic::Ordering::Relaxed)
+        self.is_running.load(Ordering::Relaxed)
     }
 
     pub fn get_run_time_ms(&self) -> Duration {
         *self.run_time_ms.lock().unwrap()
     }
 
-    pub fn get_graph(&self) -> Arc<Mutex<Graph>> {
-        self.graph.clone()
+    pub fn get_graph(&self) -> &Graph {
+        &self.graph
     }
 
     pub fn set_graph(&mut self, graph: Graph) {
-        self.graph = Arc::new(Mutex::new(graph));
+        self.graph = graph;
     }
 
     pub fn disconnect(&mut self) {
@@ -179,24 +180,73 @@ impl Motor {
 
     pub fn generate_graph_rotation(&self) {
         let points_rotation = self.graph.get_mutex_rotation_points();
-        let protocol = self.protocol;
+        let rotation = self.protocol.rotation;
+        let index_thread = self.graph.get_rotation_thread_index();
+        index_thread.fetch_add(1, Ordering::Relaxed);
+        let index_thead_initial = index_thread.load(Ordering::Relaxed);
         // Rotation
         thread::spawn(move || {
-            let mut stepgen = protocol.rotation.create_stepgen();
-            let mut instant = Instant::now();
-            let mut prev_x = 0;
             points_rotation.lock().unwrap().clear();
-            points_rotation.lock().unwrap().push(  [0.0, 0.0]);
-            let now = |instant: Instant, prev_x: u64| -> TimerInstantU64<1000> {
-                TimerInstantU64::from_ticks(instant.elapsed().as_millis() as u64 + (prev_x as f64 * 0.001) as u64)
+            let mut stepgen = rotation.create_stepgen();
+            let mut delay_acc_us = 0;
+            let mut rpm_for_graph = 0.0;
+            let mut current_time = 0.0;
+            let now = |prev_delay: u64| -> TimerInstantU64<1000> {
+                TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
-            while let Some(delay) = stepgen.next_delay(Some(now(instant, prev_x))) {
-                prev_x += delay;
-                instant = Instant::now();
-                let rpm_for_graph = 300_000.0 / protocol.rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
-                points_rotation.lock().unwrap().push([prev_x as f64 * 0.001, rpm_for_graph]);
+            'stepgen: while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+                if points_rotation.lock().unwrap().len() >= MAX_POINTS_GRAPHS {
+                    break 'stepgen;
+                }
+                current_time = delay_acc_us as f64 * 0.001;
+                rpm_for_graph = 300_000.0 / rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
+                if index_thead_initial != index_thread.load(Ordering::Relaxed) {
+                    return;
+                }
+                if rpm_for_graph == points_rotation.lock().unwrap().last().unwrap_or(&[0.0f64; 2])[1] && current_time as u64 % 1000 == 0 {
+                    points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                } else if current_time as u64 % 50 == 0 {
+                    points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                }
+                delay_acc_us += delay;
             }
+            points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
         });
-        //TODO: finish
+    }
+
+    pub fn generate_graph_agitation(&self) {
+        let points_agitation = self.graph.get_mutex_agitation_points();
+        let agitation = self.protocol.agitation;
+        let index_thread = self.graph.get_agitation_thread_index();
+        index_thread.fetch_add(1, Ordering::Relaxed);
+        let index_thead_initial = index_thread.load(Ordering::Relaxed);
+        // Agitation
+        thread::spawn(move || {
+            points_agitation.lock().unwrap().clear();
+            let mut stepgen = agitation.create_stepgen();
+            let mut delay_acc_us = 0;
+            let mut rpm_for_graph = 0.0;
+            let mut current_time = 0.0;
+            let now = |prev_delay: u64| -> TimerInstantU64<1000> {
+                TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
+            };
+            'stepgen: while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+                if points_agitation.lock().unwrap().len() >= MAX_POINTS_GRAPHS {
+                    break 'stepgen;
+                }
+                current_time = delay_acc_us as f64 * 0.001;
+                rpm_for_graph = 300_000.0 / agitation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
+                if index_thead_initial != index_thread.load(Ordering::Relaxed) {
+                    return;
+                }
+                if rpm_for_graph == points_agitation.lock().unwrap().last().unwrap_or(&[0.0f64; 2])[1] && current_time as u64 % 1000 == 0 {
+                    points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                } else if current_time as u64 % 50 == 0 {
+                    points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                }
+                delay_acc_us += delay;
+            }
+            points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+        });
     }
 }

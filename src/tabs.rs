@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use dashmap::DashMap;
 use egui::{Color32, RichText, Ui, WidgetText};
+use egui::plot::{Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
@@ -55,8 +56,9 @@ impl Tabs<'_> {
         let channels = self.channels.message_tx.clone();
         let already_connected_ports = self.already_connected_ports.clone();
         let current_protocol = *self.motor.get(&tab).unwrap().get_protocol();
+        let current_graph = self.motor.get(&tab).unwrap().get_graph().clone();
         thread::spawn(move || {
-            let motor = match Motor::new_with_protocol(serial_port, motor_name, already_connected_ports, current_protocol) {
+            let motor = match Motor::new_with_protocol_and_graph(serial_port, motor_name, already_connected_ports, current_protocol, current_graph) {
                 Ok(motor) => motor,
                 Err(err) => {
                     channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Tab {}", tab)), 3, false)).ok();
@@ -216,7 +218,15 @@ impl TabViewer for Tabs<'_> {
                     // Setup rotation phase
                     ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
+                                ui.separator();
+                                if ui.add_sized(egui::vec2(30.0, 20.0), egui::Button::new(RichText::new("📈").strong()))
+                                    .on_hover_text("Click to update rotation graph")
+                                    .clicked() {
+                                    self.motor.get(tab).unwrap().generate_graph_rotation();
+                                };
+                            });
                             ui.separator();
                             // Slider for RPM
                             ui.horizontal(|ui| {
@@ -281,7 +291,15 @@ impl TabViewer for Tabs<'_> {
                     // Setup agitation phase
                     ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
+                            ui.horizontal(|ui| {
+                                ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
+                                ui.separator();
+                                if ui.add_sized(egui::vec2(30.0, 20.0), egui::Button::new(RichText::new("📈").strong()))
+                                    .on_hover_text("Click to update agitation graph")
+                                    .clicked() {
+                                    self.motor.get(tab).unwrap().generate_graph_agitation();
+                                };
+                            });
                             ui.separator();
                             // Slider for RPM
                             ui.horizontal(|ui| {
@@ -380,7 +398,34 @@ impl TabViewer for Tabs<'_> {
             });
             ui.separator();
             ///// Graphs /////
-
+            let default_color = ui.visuals().extreme_bg_color;
+            ui.visuals_mut().extreme_bg_color = THEME.base;
+            // Graph Rotation
+            egui::ScrollArea::horizontal().id_source("rotation_scroll").show(ui, |ui| {
+                let line = Line::new(self.motor.get(tab).unwrap().get_graph().get_rotation_points()).name("Rotation").color(THEME.sapphire);
+                egui::plot::Plot::new("rotation_graph")
+                    .legend(Legend::default())
+                    .auto_bounds_x()
+                    .show_background(true)
+                    .height(200.0)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(line);
+                    });
+            });
+            ui.separator();
+            // Graph Agitation
+            egui::ScrollArea::horizontal().id_source("agitation_scroll").show(ui, |ui| {
+                let line = Line::new(self.motor.get(tab).unwrap().get_graph().get_agitation_points()).name("Agitation").color(THEME.blue);
+                egui::plot::Plot::new("agitation_graph")
+                    .auto_bounds_x()
+                    .show_background(true)
+                    .legend(Legend::default())
+                    .height(200.0)
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(line);
+                    });
+            });
+            ui.visuals_mut().extreme_bg_color = default_color;
         });
     }
 

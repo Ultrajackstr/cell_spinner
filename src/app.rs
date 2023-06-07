@@ -320,11 +320,17 @@ impl CellSpinner {
                     let message: Message = Message::new(ToastKind::Info, "Configuration imported for all stopped motors!", None, None, 3, false);
                     self.message_handler(message);
                 }
+                self.motor.iter().for_each(|motor| {
+                    motor.generate_graph_rotation();
+                    motor.generate_graph_agitation();
+                });
             } else {
                 self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
                 let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
                 let message: Message = Message::new(ToastKind::Info, "Configuration imported!", None, Some(current_motor), 3, false);
                 self.message_handler(message);
+                self.motor.get(tab).unwrap().generate_graph_rotation();
+                self.motor.get(tab).unwrap().generate_graph_agitation();
             }
             Ok(())
         };
