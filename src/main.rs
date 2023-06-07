@@ -83,11 +83,11 @@ fn main() -> eframe::Result<()> {
 
     tracing_subscriber::fmt().init();
 
-    let icon = include_bytes!("resources/icon.png");
+    const ICON: &[u8] = include_bytes!("resources/icon.png");
 
     let native_options = eframe::NativeOptions {
         resizable: true,
-        icon_data: Some(load_icon(icon)),
+        icon_data: Some(load_icon(ICON)),
         initial_window_size: Some(egui::Vec2 { x: 1100.0, y: 400.0 }),
         ..Default::default()
     };

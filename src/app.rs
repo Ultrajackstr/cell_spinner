@@ -41,6 +41,8 @@ pub const THEME: Theme = Theme {
     ..LATTE
 };
 
+// pub const SCHEME: &[u8] = include_bytes!("./resources/schematic/protocol.png");
+
 pub struct CellSpinner {
     app_version: String,
     is_first_frame: bool,

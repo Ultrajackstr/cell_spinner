@@ -117,6 +117,12 @@ impl Motor {
         }
         let min_rotation_duration = self.protocol.rotation.get_min_duration();
         let min_agitation_duration = self.protocol.agitation.get_min_duration();
+        if self.protocol.rotation_duration_ms < min_rotation_duration {
+            self.protocol.rotation_duration_ms = min_rotation_duration;
+        }
+        if self.protocol.agitation_duration_ms < min_agitation_duration {
+            self.protocol.agitation_duration_ms = min_agitation_duration;
+        }
         if min_rotation_duration == 0 {
             self.protocol.rotation_duration_ms = min_rotation_duration;
         }

@@ -222,7 +222,7 @@ impl TabViewer for Tabs<'_> {
                             ui.horizontal(|ui| {
                                 ui.label("RPM:");
                                 let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm))
+                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm));
                             });
                             // Slider for acceleration
                             ui.horizontal(|ui| {
@@ -354,10 +354,31 @@ impl TabViewer for Tabs<'_> {
                                 ui.label(RichText::new("Global duration (ms):").color(color)).on_hover_text("Global duration of the protocol.");
                                 ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
                             });
+                            ui.separator();
+                            // Schematic of protocol
+                            ui.vertical_centered(|ui| {
+                                ui.add_space(20.0);
+                                ui.horizontal(|ui| {
+                                    ui.add_space(50.0);
+                                    ui.label("Rotation").on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
+                                    ui.label("➡️");
+                                    ui.label("Pause pre-agitation");
+                                });
+                                ui.label("⬇️️");
+                                ui.horizontal(|ui| {
+                                    ui.add_space(50.0);
+                                    ui.label("Agitation").on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
+                                    ui.label("➡️");
+                                    ui.label("Pause post-agitation");
+                                });
+                                ui.label("⬇️");
+                                ui.label("Repeat for global duration").on_hover_text("This duration supersedes all other durations.");
+                            });
                         });
                     });
                 });
             });
+            ui.separator();
         });
     }
 
