@@ -108,13 +108,24 @@ impl Motor {
     }
 
     pub fn start_motor(&mut self, message_tx: Option<Sender<Message>>) {
+        // Check the durations
+        if self.protocol.rotation.pause_before_direction_change_ms != 0 && self.protocol.rotation.duration_of_one_direction_cycle_ms == 0 {
+            self.protocol.rotation.pause_before_direction_change_ms = 0;
+        }
+        if self.protocol.agitation.pause_before_direction_change_ms != 0 && self.protocol.agitation.duration_of_one_direction_cycle_ms == 0 {
+            self.protocol.agitation.pause_before_direction_change_ms = 0;
+        }
+        let min_rotation_duration = self.protocol.rotation.get_min_duration();
+        let min_agitation_duration = self.protocol.agitation.get_min_duration();
+        if min_rotation_duration == 0 {
+            self.protocol.rotation_duration_ms = min_rotation_duration;
+        }
+        if min_agitation_duration == 0 {
+            self.protocol.agitation_duration_ms = min_agitation_duration;
+        }
         self.is_running.store(true, std::sync::atomic::Ordering::Relaxed);
         self.start_run_time();
         self.serial.listen_to_serial_port(&self.is_running, message_tx);
-        // let rotation: Rotation = Rotation::new(60, 6000, StepMode128::M16, 5000, 0, Direction::Forward, 0);
-        // let agitation: Rotation = Rotation::new(4000, 10_000, StepMode128::Full, 0, 0, Direction::Forward, 0);
-        // let protocol: Protocol = Protocol::new(rotation, 10_000, 0, agitation, 0, 0, 30_000);
-        // self.protocol = protocol;
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
 
