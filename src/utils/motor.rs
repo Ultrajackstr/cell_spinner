@@ -191,26 +191,38 @@ impl Motor {
             let mut delay_acc_us = 0;
             let mut rpm_for_graph = 0.0;
             let mut current_time = 0.0;
+            let mut last_rpm = 0.0;
             let now = |prev_delay: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
-            'stepgen: while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
                 if points_rotation.lock().unwrap().len() >= MAX_POINTS_GRAPHS {
-                    break 'stepgen;
+                    return;
                 }
                 current_time = delay_acc_us as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
                 }
-                if rpm_for_graph == points_rotation.lock().unwrap().last().unwrap_or(&[0.0f64; 2])[1] && current_time as u64 % 1000 == 0 {
+                if rpm_for_graph != last_rpm {
                     points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
-                } else if current_time as u64 % 50 == 0 {
+                    last_rpm = rpm_for_graph;
+                } else if (current_time as u64 + 1_000_000) % 1000 == 0 {
                     points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
             }
             points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+            // // Keep the points in the graph while the rpm is changing
+            // let mut new_points: Vec<[f64; 2]> = vec![];
+            // let mut last_rpm = 0;
+            // for point in points_rotation.lock().unwrap().iter() {
+            //     if point[1] as u32 != last_rpm {
+            //         new_points.push([point[0], point[1]]);
+            //         last_rpm = point[1] as u32;
+            //     }
+            // }
+            // *points_rotation.lock().unwrap() = new_points;
         });
     }
 
@@ -227,26 +239,37 @@ impl Motor {
             let mut delay_acc_us = 0;
             let mut rpm_for_graph = 0.0;
             let mut current_time = 0.0;
+            let mut last_rpm = 0.0;
             let now = |prev_delay: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
-            'stepgen: while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
                 if points_agitation.lock().unwrap().len() >= MAX_POINTS_GRAPHS {
-                    break 'stepgen;
+                    return;
                 }
                 current_time = delay_acc_us as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / agitation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
                 }
-                if rpm_for_graph == points_agitation.lock().unwrap().last().unwrap_or(&[0.0f64; 2])[1] && current_time as u64 % 1000 == 0 {
+                if rpm_for_graph != last_rpm {
                     points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
-                } else if current_time as u64 % 50 == 0 {
+                    last_rpm = rpm_for_graph;
+                } else if (current_time as u64 + 1_000_000) % 1000 == 0 {
                     points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
             }
             points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+            // // Keep the points in the graph while the rpm is changing
+            // let mut new_points: Vec<[f64; 2]> = vec![];
+            // let mut last_rpm = 0;
+            // for point in points_agitation.lock().unwrap().iter() {
+            //     if point[1] as u32 != last_rpm {
+            //         new_points.push([point[0], point[1]]);
+            //         last_rpm = point[1] as u32;
+            //     }
+            // }
         });
     }
 }
