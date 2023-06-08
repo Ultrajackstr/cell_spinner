@@ -111,21 +111,21 @@ impl Motor {
     }
 
     pub fn start_motor(&mut self, message_tx: Option<Sender<Message>>) {
-        // Check the durations
-        if self.protocol.rotation.pause_before_direction_change_ms != 0 && self.protocol.rotation.duration_of_one_direction_cycle_ms == 0 {
-            self.protocol.rotation.pause_before_direction_change_ms = 0;
-        }
-        if self.protocol.agitation.pause_before_direction_change_ms != 0 && self.protocol.agitation.duration_of_one_direction_cycle_ms == 0 {
-            self.protocol.agitation.pause_before_direction_change_ms = 0;
-        }
+        // // Check the durations
+        // if self.protocol.rotation.pause_before_direction_change_ms != 0 && self.protocol.rotation.duration_of_one_direction_cycle_ms == 0 {
+        //     self.protocol.rotation.pause_before_direction_change_ms = 0;
+        // }
+        // if self.protocol.agitation.pause_before_direction_change_ms != 0 && self.protocol.agitation.duration_of_one_direction_cycle_ms == 0 {
+        //     self.protocol.agitation.pause_before_direction_change_ms = 0;
+        // }
         let min_rotation_duration = self.protocol.rotation.get_min_duration();
         let min_agitation_duration = self.protocol.agitation.get_min_duration();
-        if self.protocol.rotation_duration_ms < min_rotation_duration {
-            self.protocol.rotation_duration_ms = min_rotation_duration;
-        }
-        if self.protocol.agitation_duration_ms < min_agitation_duration {
-            self.protocol.agitation_duration_ms = min_agitation_duration;
-        }
+        // if self.protocol.rotation_duration_ms < min_rotation_duration {
+        //     self.protocol.rotation_duration_ms = min_rotation_duration;
+        // }
+        // if self.protocol.agitation_duration_ms < min_agitation_duration {
+        //     self.protocol.agitation_duration_ms = min_agitation_duration;
+        // }
         if min_rotation_duration == 0 {
             self.protocol.rotation_duration_ms = min_rotation_duration;
         }

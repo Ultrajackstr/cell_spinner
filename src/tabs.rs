@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use dashmap::DashMap;
 use egui::{Color32, RichText, Ui, WidgetText};
-use egui::plot::{Legend, Line};
+use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
@@ -405,8 +405,9 @@ impl TabViewer for Tabs<'_> {
         egui::ScrollArea::horizontal().id_source("rotation_scroll").show(ui, |ui| {
             let line = Line::new(self.motor.get(tab).unwrap().get_graph().get_rotation_points()).name("Rotation").color(THEME.sapphire);
             egui::plot::Plot::new("rotation_graph")
-                .legend(Legend::default())
+                .legend(Legend {position: Corner::LeftTop, ..Default::default()})
                 .auto_bounds_x()
+                .auto_bounds_y()
                 .show_background(true)
                 .height(200.0)
                 .label_formatter(move |_s, value| {
@@ -422,8 +423,9 @@ impl TabViewer for Tabs<'_> {
             let line = Line::new(self.motor.get(tab).unwrap().get_graph().get_agitation_points()).name("Agitation").color(THEME.blue);
             egui::plot::Plot::new("agitation_graph")
                 .auto_bounds_x()
+                .auto_bounds_y()
                 .show_background(true)
-                .legend(Legend::default())
+                .legend(Legend {position: Corner::LeftTop, ..Default::default()})
                 .height(200.0)
                 .label_formatter(move |_s, value| {
                     format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
