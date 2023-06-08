@@ -1,4 +1,3 @@
-use std::cmp::max;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
@@ -9,9 +8,8 @@ use anyhow::{bail, Error};
 use fugit::TimerInstantU64;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THREAD_SLEEP};
-use crate::utils::enums::{Direction, StepMode128};
 use crate::utils::graph::Graph;
-use crate::utils::protocols::{Protocol, Rotation};
+use crate::utils::protocols::Protocol;
 use crate::utils::serial::Serial;
 use crate::utils::structs::Message;
 
@@ -111,44 +109,31 @@ impl Motor {
     }
 
     pub fn start_motor(&mut self, message_tx: Option<Sender<Message>>) {
-        // // Check the durations
-        // if self.protocol.rotation.pause_before_direction_change_ms != 0 && self.protocol.rotation.duration_of_one_direction_cycle_ms == 0 {
-        //     self.protocol.rotation.pause_before_direction_change_ms = 0;
-        // }
-        // if self.protocol.agitation.pause_before_direction_change_ms != 0 && self.protocol.agitation.duration_of_one_direction_cycle_ms == 0 {
-        //     self.protocol.agitation.pause_before_direction_change_ms = 0;
-        // }
         let min_rotation_duration = self.protocol.rotation.get_min_duration();
         let min_agitation_duration = self.protocol.agitation.get_min_duration();
-        // if self.protocol.rotation_duration_ms < min_rotation_duration {
-        //     self.protocol.rotation_duration_ms = min_rotation_duration;
-        // }
-        // if self.protocol.agitation_duration_ms < min_agitation_duration {
-        //     self.protocol.agitation_duration_ms = min_agitation_duration;
-        // }
         if min_rotation_duration == 0 {
             self.protocol.rotation_duration_ms = min_rotation_duration;
         }
         if min_agitation_duration == 0 {
             self.protocol.agitation_duration_ms = min_agitation_duration;
         }
-        self.is_running.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.is_running.store(true, Ordering::Relaxed);
         self.start_run_time();
-        self.serial.listen_to_serial_port(&self.is_running, message_tx);
+        self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
 
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(vec![b'x']);
-        self.is_running.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.is_running.store(false, Ordering::Relaxed);
     }
 
     pub fn start_run_time(&mut self) {
         let is_running = self.is_running.clone();
         let run_time_ms = self.run_time_ms.clone();
-        std::thread::spawn(move || {
-            let start_time = std::time::Instant::now();
-            while is_running.load(std::sync::atomic::Ordering::Relaxed) {
+        thread::spawn(move || {
+            let start_time = Instant::now();
+            while is_running.load(Ordering::Relaxed) {
                 let elapsed_time = start_time.elapsed();
                 *run_time_ms.lock().unwrap() = elapsed_time;
                 std::thread::sleep(Duration::from_millis(THREAD_SLEEP));
@@ -207,7 +192,7 @@ impl Motor {
                 if rpm_for_graph != last_rpm {
                     points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if (current_time as u64 + 1_000_000) % 1000 == 0 {
+                } else if (current_time as u64) % 100_000 == 0 {
                     points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
@@ -245,7 +230,7 @@ impl Motor {
                 if rpm_for_graph != last_rpm {
                     points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if (current_time as u64 + 1_000_000) % 1000 == 0 {
+                } else if (current_time as u64) % 100_000 == 0 {
                     points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;

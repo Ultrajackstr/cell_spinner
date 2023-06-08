@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde::ser::SerializeStruct;
 
 use crate::app::{BYTES, MAX_RPM};
 use crate::utils::enums::{Direction, StepMode128};

@@ -1,6 +1,5 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
 
 use dashmap::DashMap;
 use egui::{Color32, RichText, Ui, WidgetText};
@@ -8,7 +7,7 @@ use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
-use crate::app::{BYTES, FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THEME};
+use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THEME};
 use crate::utils::enums::Direction;
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, Message};
@@ -33,7 +32,7 @@ impl Tabs<'_> {
     fn init_tab(&mut self, tab: usize) {
         self.promise_serial_connect.insert(tab, None);
         self.motor.insert(tab, Motor::default());
-        self.motor_name.insert(tab, tab.to_string());
+        self.motor_name.insert(tab, format!("Motor {}", tab));
         self.added_tabs.push(tab);
         self.refresh_available_serial_ports(tab);
         self.selected_port.insert(tab, self.available_ports[0].clone());
@@ -61,14 +60,14 @@ impl Tabs<'_> {
             let motor = match Motor::new_with_protocol_and_graph(serial_port, motor_name, already_connected_ports, current_protocol, current_graph) {
                 Ok(motor) => motor,
                 Err(err) => {
-                    channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Tab {}", tab)), 3, false)).ok();
+                    channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
                     promise.insert(tab, None);
                     return;
                 }
             };
             motors.insert(tab, motor);
             promise.insert(tab, None);
-            channels.as_ref().unwrap().send(Message::new(ToastKind::Success, "Successfully connected to serial port", None, Some(format!("Tab {}", tab)), 3, false)).ok();
+            channels.as_ref().unwrap().send(Message::new(ToastKind::Success, "Successfully connected to serial port", None, Some(format!("Motor {}", tab)), 3, false)).ok();
         });
     }
 
@@ -81,7 +80,7 @@ impl Tabs<'_> {
             }
             Err(err) => {
                 let error = anyhow::Error::new(err);
-                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Tab {}", tab)), 3, false)).ok();
+                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Motor {}", tab)), 3, false)).ok();
                 vec!["".to_string()]
             }
         };
@@ -125,7 +124,7 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                         });
-                        ui.add_enabled_ui(is_connected, |ui| {
+                        ui.add_enabled_ui(is_connected && !is_running, |ui| {
                             if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut()))
                                 .on_hover_text("Change the name of the motor")
                                 .lost_focus() {
@@ -144,7 +143,7 @@ impl TabViewer for Tabs<'_> {
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none() &&
                                               !self.available_ports.is_empty(), |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Connect").color(Color32::WHITE)).fill(THEME.green)).clicked() {
-                                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, "Connecting to serial port...", None, Some(format!("Tab {}", tab)), 0, true)).ok();
+                                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, "Connecting to serial port...", None, Some(format!("Motor {}", tab)), 0, true)).ok();
                                 let selected_port = self.selected_port.get(tab).unwrap().value().to_string();
                                 let motor_name = self.motor_name.get(tab).unwrap().clone();
                                 self.thread_spawn_new_motor(*tab, selected_port, motor_name);
@@ -154,13 +153,7 @@ impl TabViewer for Tabs<'_> {
                         let run_time = self.motor.get(tab).unwrap().get_run_time_ms().as_secs_f32();
                         ui.label(format!("⏱️: {:.2} s", run_time))
                             .on_hover_text(
-                                // Show, minutes, hours, days
-                                format!(
-                                    "Total run time of the motor.\n{:.2} minutes\n{:.2} hours\n{:.2} days",
-                                    run_time / 60.0,
-                                    run_time / 3600.0,
-                                    run_time / 86400.0
-                                )
+                                format!("{} days, {} hours, {} minutes", run_time as u32 / 86400, run_time as u32 / 3600 % 24, run_time as u32 / 60 % 60)
                             );
                     });
                 });
@@ -212,7 +205,7 @@ impl TabViewer for Tabs<'_> {
         });
         ui.separator();
         ////// SETUP //////
-        ui.add_enabled_ui(is_connected && !is_running, |ui| {
+        ui.add_enabled_ui(!is_running, |ui| {
             egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
                 ui.horizontal(|ui| {
                     // Setup rotation phase

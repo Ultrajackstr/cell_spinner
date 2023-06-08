@@ -180,7 +180,7 @@ impl CellSpinner {
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
         self.motor.insert(tab, Motor::default());
-        self.motor_name.insert(tab, tab.to_string());
+        self.motor_name.insert(tab, format!("Motor {}", tab));
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {
                 let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
@@ -188,8 +188,8 @@ impl CellSpinner {
                 available_ports
             }
             Err(err) => {
-                let error = anyhow::Error::new(err);
-                self.message_handler(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Tab {}", tab)), 3, false));
+                let error = Error::new(err);
+                self.message_handler(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Motor {}", tab)), 3, false));
                 vec!["".to_string()]
             }
         };

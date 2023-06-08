@@ -78,10 +78,9 @@ impl Serial {
         }
     }
 
-    pub fn listen_to_serial_port(&self, is_running: &Arc<AtomicBool>, message_tx: Option<Sender<Message>>) {
+    pub fn listen_to_serial_port(&self, motor_name: String, is_running: &Arc<AtomicBool>, message_tx: Option<Sender<Message>>) {
         let port = self.port.clone();
         let is_running = is_running.clone();
-        let port_name = self.port_name.clone();
         thread::spawn(move || {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
@@ -90,7 +89,7 @@ impl Serial {
                     Ok(n) => n,
                     Err(err) => {
                         let error = Some(Error::new(err));
-                        let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(format!("Port: {}", port_name)), 5, false);
+                        let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(motor_name.clone()), 5, false);
                         message_tx.as_ref().unwrap().send(message).unwrap();
                         return;
                     }
@@ -100,7 +99,7 @@ impl Serial {
                     match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
                         Ok(_) => {
                             let state: StepperState = StepperState::from(&buf);
-                            let origin = Some(format!("Port: {}", port_name));
+                            let origin = Some(motor_name.clone());
                             let error = Some(anyhow!("Received: \"{}\" {:?}", String::from_utf8(buf.to_vec()).unwrap(), &buf));
                             let message = state.to_string();
                             match state {
@@ -160,7 +159,7 @@ impl Serial {
                         }
                         Err(err) => {
                             let error = Some(Error::new(err));
-                            let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(format!("Port: {}", port_name)), 5, false);
+                            let message: Message = Message::new(ToastKind::Error, "Error while reading serial port", error, Some(format!("Port: {}", motor_name)), 5, false);
                             message_tx.as_ref().unwrap().send(message).unwrap();
                             return;
                         }
