@@ -217,8 +217,8 @@ impl CellSpinner {
                     if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Open log folder")
                         .color(Color32::WHITE)).fill(THEME.sapphire))
                         .clicked() {
-                        if let Some(mut path) = dirs::home_dir() {
-                            path.push("ev_stepper");
+                        if let Some(mut path) = home_dir() {
+                            path.push("cell_spinner");
                             match Command::new("explorer")
                                 .arg(path)
                                 .spawn() {
