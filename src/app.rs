@@ -387,6 +387,7 @@ impl eframe::App for CellSpinner {
             frame.close();
         }
 
+        // Always repaint the UI, even if no events occurred.
         ctx.request_repaint();
 
         ////////////////////////////////////////////////////////////////////////////////
