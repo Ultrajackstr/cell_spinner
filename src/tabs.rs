@@ -556,7 +556,7 @@ impl TabViewer for Tabs<'_> {
         let is_connected = self.motor.get(tab).unwrap().get_is_connected();
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         let motor_name = self.motor.get(tab).unwrap().get_name().to_string();
-        format!("Motor: {}-{}{}",
+        format!("{}-{}{}",
                 if !motor_name.is_empty() { motor_name } else { tab.to_string() },
                 if is_connected { "🔗" } else { "🚫" },
                 if is_running { "▶️" } else { "⏹️" },
@@ -568,7 +568,7 @@ impl TabViewer for Tabs<'_> {
         if is_running {
             let message: Message = Message::new(ToastKind::Warning,
                                                 "Motor is running! Please stop the motor before closing the tab."
-                                                , None, Some(format!("Motor: {}", self.motor.get(tab).unwrap().get_name()))
+                                                , None, Some(format!("{}", self.motor.get(tab).unwrap().get_name()))
                                                 , 3, false);
             self.channels.message_tx.as_ref().unwrap().send(message).ok();
             return false;
