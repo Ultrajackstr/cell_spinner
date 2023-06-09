@@ -109,13 +109,15 @@ impl TabViewer for Tabs<'_> {
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.horizontal_top(|ui| {
+                egui::Grid::new("serial")
+                    .show(ui, |ui| {
                         // Refresh COM ports button.
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none(), |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new("Refresh ➡")).clicked() {
                                 self.refresh_available_serial_ports(*tab);
                             }
+                        });
+                        ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none(), |ui| {
                             let selected_port = self.selected_port.get(tab).unwrap().value().clone();
                             egui::ComboBox::from_id_source("available_ports")
                                 .selected_text(selected_port)
@@ -132,8 +134,7 @@ impl TabViewer for Tabs<'_> {
                                 self.motor.get_mut(tab).unwrap().set_name(&self.motor_name.get(tab).unwrap());
                             }
                         });
-                    });
-                    ui.horizontal(|ui| {
+                        ui.end_row();
                         // Disconnect button.
                         ui.add_enabled_ui(is_connected, |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("DISCONNECT").color(Color32::WHITE)).fill(THEME.red)).clicked() {
@@ -157,7 +158,7 @@ impl TabViewer for Tabs<'_> {
                                 format!("{} days, {} hours, {} minutes", run_time as u32 / 86400, run_time as u32 / 3600 % 24, run_time as u32 / 60 % 60)
                             );
                     });
-                });
+                ////////////////////////////
                 ui.separator();
                 ui.horizontal_centered(|ui| {
                     // Button to send the parameters to the motor and run it. Focus is check to prevent the button from being pressed when the user is typing in the text field.
@@ -211,7 +212,7 @@ impl TabViewer for Tabs<'_> {
                 ui.horizontal(|ui| {
                     // Setup rotation phase
                     let mut rotation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(370.0, 280.0), |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
@@ -325,7 +326,7 @@ impl TabViewer for Tabs<'_> {
                     ui.separator();
                     // Setup agitation phase
                     let mut agitation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(370.0, 280.0), |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
@@ -440,7 +441,7 @@ impl TabViewer for Tabs<'_> {
                     });
                     ui.separator();
                     // Setup durations
-                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(370.0, 280.0), |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
