@@ -257,7 +257,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Rotation ycle duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -287,7 +287,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Pause before rotation change")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -301,7 +301,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Rotation duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -315,7 +315,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_before_agitation_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Pause pre-agitation")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -380,7 +380,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Agitation cycle duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -410,7 +410,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Pause before agitation change")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -424,7 +424,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Agitation duration (ms):").on_hover_text("Duration of the agitation phase.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Agitation duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -438,7 +438,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label("Pause post-agitation (ms):").on_hover_text("Pause after the agitation phase.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_after_agitation_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Pause post-agitation")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
@@ -465,7 +465,7 @@ impl TabViewer for Tabs<'_> {
                                 ui.label(RichText::new("Global duration (ms):").color(color)).on_hover_text("Global duration of the protocol.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().global_duration_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() {
+                                if response.hovered() || response.has_focus() || response.dragged() {
                                     egui::Window::new("Global duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
