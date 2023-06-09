@@ -466,7 +466,7 @@ impl eframe::App for CellSpinner {
                     added_tabs: &mut self.added_tabs,
                     current_tab_counter: &mut self.current_tab_counter,
                     absolute_tab_counter: &mut self.absolute_tab_counter,
-                    can_tab_close: &mut false,
+                    can_tab_close: &mut self.can_tab_close,
                 });
             added_nodes.drain(..).for_each(|node| {
                 self.tree.set_focused_node(node);

@@ -256,10 +256,16 @@ impl TabViewer for Tabs<'_> {
                             ui.horizontal(|ui| {
                                 ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    // Display days, hours, minutes, seconds
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000))
-                                    .changed() {
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Rotation ycle duration")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                        });
+                                }
+                                if response.changed() {
                                     rotation_graph_needs_update = true;
                                 }
                             });
@@ -280,22 +286,43 @@ impl TabViewer for Tabs<'_> {
                             ui.horizontal(|ui| {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Pause before rotation change")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                        });
+                                }
                             });
                             // Slider for rotation duration
                             ui.horizontal(|ui| {
                                 ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Rotation duration")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                        });
+                                }
                             });
                             // Slider for pause before agitation
                             ui.horizontal(|ui| {
                                 ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_before_agitation_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Pause pre-agitation")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                        });
+                                }
                             });
                         });
                         if rotation_graph_needs_update {
@@ -352,9 +379,16 @@ impl TabViewer for Tabs<'_> {
                             ui.horizontal(|ui| {
                                 ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms;
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000))
-                                    .changed() {
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Agitation cycle duration")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                        });
+                                }
+                                if response.changed() {
                                     agitation_graph_needs_update = true;
                                 }
                             });
@@ -375,22 +409,43 @@ impl TabViewer for Tabs<'_> {
                             ui.horizontal(|ui| {
                                 ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Pause before agitation change")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                        });
+                                }
                             });
                             // Slider for agitation duration
                             ui.horizontal(|ui| {
                                 ui.label("Agitation duration (ms):").on_hover_text("Duration of the agitation phase.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Agitation duration")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                        });
+                                }
                             });
                             // Slider for pause after agitation
                             ui.horizontal(|ui| {
                                 ui.label("Pause post-agitation (ms):").on_hover_text("Pause after the agitation phase.");
                                 let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_after_agitation_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Pause post-agitation")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                        });
+                                }
                             });
                         });
                         if agitation_graph_needs_update {
@@ -409,8 +464,15 @@ impl TabViewer for Tabs<'_> {
                                 let color = if self.motor.get(tab).unwrap().get_protocol().global_duration_ms == 0 { THEME.red } else { THEME.text };
                                 ui.label(RichText::new("Global duration (ms):").color(color)).on_hover_text("Global duration of the protocol.");
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().global_duration_ms;
-                                ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true))
-                                    .on_hover_text(format!("{} days, {} hours, {} minutes, {} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                if response.hovered() || response.has_focus() {
+                                    egui::Window::new("Global duration")
+                                        .collapsible(false)
+                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                        .show(&self.main_context, |ui| {
+                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                        });
+                                }
                             });
                             ui.separator();
                             // Schematic of protocol
