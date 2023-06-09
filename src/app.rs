@@ -180,6 +180,7 @@ impl CellSpinner {
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
         self.motor.insert(tab, Motor::default());
+        self.motor.get_mut(&tab).unwrap().set_name(&format!("Motor {}", tab));
         self.motor_name.insert(tab, format!("Motor {}", tab));
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {

@@ -32,6 +32,7 @@ impl Tabs<'_> {
     fn init_tab(&mut self, tab: usize) {
         self.promise_serial_connect.insert(tab, None);
         self.motor.insert(tab, Motor::default());
+        self.motor.get_mut(&tab).unwrap().set_name(&format!("Motor {}", tab));
         self.motor_name.insert(tab, format!("Motor {}", tab));
         self.added_tabs.push(tab);
         self.refresh_available_serial_ports(tab);
@@ -214,12 +215,6 @@ impl TabViewer for Tabs<'_> {
                         ui.vertical(|ui| {
                             ui.horizontal(|ui| {
                                 ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
-                                ui.separator();
-                                if ui.add_sized(egui::vec2(30.0, 20.0), egui::Button::new(RichText::new("📈").strong()))
-                                    .on_hover_text("Click to update rotation graph")
-                                    .clicked() {
-                                    self.motor.get(tab).unwrap().generate_graph_rotation();
-                                };
                             });
                             ui.separator();
                             // Slider for RPM
@@ -326,6 +321,11 @@ impl TabViewer for Tabs<'_> {
                             });
                         });
                         if rotation_graph_needs_update {
+                            let max_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
+                            let current_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.rpm;
+                            if current_rpm_rotation > max_rpm_rotation {
+                                self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm = max_rpm_rotation;
+                            }
                             self.motor.get(tab).unwrap().generate_graph_rotation();
                             rotation_graph_needs_update = false;
                         }
@@ -337,12 +337,6 @@ impl TabViewer for Tabs<'_> {
                         ui.vertical(|ui| {
                             ui.horizontal(|ui| {
                                 ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
-                                ui.separator();
-                                if ui.add_sized(egui::vec2(30.0, 20.0), egui::Button::new(RichText::new("📈").strong()))
-                                    .on_hover_text("Click to update agitation graph")
-                                    .clicked() {
-                                    self.motor.get(tab).unwrap().generate_graph_agitation();
-                                };
                             });
                             ui.separator();
                             // Slider for RPM
@@ -449,6 +443,11 @@ impl TabViewer for Tabs<'_> {
                             });
                         });
                         if agitation_graph_needs_update {
+                            let max_rpm_agitation = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm_for_stepmode();
+                            let current_rpm_agitation = self.motor.get(tab).unwrap().get_protocol().agitation.rpm;
+                            if current_rpm_agitation > max_rpm_agitation {
+                                self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm = max_rpm_agitation;
+                            }
                             self.motor.get(tab).unwrap().generate_graph_agitation();
                             agitation_graph_needs_update = false;
                         }
@@ -568,7 +567,7 @@ impl TabViewer for Tabs<'_> {
         if is_running {
             let message: Message = Message::new(ToastKind::Warning,
                                                 "Motor is running! Please stop the motor before closing the tab."
-                                                , None, Some(format!("{}", self.motor.get(tab).unwrap().get_name()))
+                                                , None, Some(self.motor.get(tab).unwrap().get_name().to_string())
                                                 , 3, false);
             self.channels.message_tx.as_ref().unwrap().send(message).ok();
             return false;
