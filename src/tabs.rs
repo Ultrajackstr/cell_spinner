@@ -211,236 +211,222 @@ impl TabViewer for Tabs<'_> {
                 ui.horizontal(|ui| {
                     // Setup rotation phase
                     let mut rotation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
-                            });
+                            ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
-                            // Slider for RPM
-                            ui.horizontal(|ui| {
-                                ui.label("RPM:");
-                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm)).changed() {
-                                    rotation_graph_needs_update = true;
-                                }
-                            });
-                            // Slider for acceleration
-                            ui.horizontal(|ui| {
-                                ui.label("Acceleration:");
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION)).changed() {
-                                    rotation_graph_needs_update = true;
-                                }
-                            });
-                            // List for stepmode
-                            let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
-                            let selected_mode = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode;
-                            ui.horizontal(|ui| {
-                                ui.label("Step mode:");
-                                egui::ComboBox::from_id_source("step_mode_rotation")
-                                    .selected_text(selected_mode.to_string())
-                                    .show_ui(ui, |ui| {
-                                        for mode in modes {
-                                            if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.step_mode, mode, mode.to_string()).changed() {
-                                                rotation_graph_needs_update = true;
+                            egui::Grid::new("rotation_grid")
+                                .show(ui, |ui| {
+                                    // Slider for RPM
+                                    ui.label("RPM:");
+                                    let max_rpm = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
+                                    if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm, 1..=max_rpm)).changed() {
+                                        rotation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // Slider for acceleration
+                                    ui.label("Acceleration:");
+                                    if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.acceleration, 1..=MAX_ACCELERATION)).changed() {
+                                        rotation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // List for stepmode
+                                    let modes = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode.get_modes();
+                                    let selected_mode = self.motor.get(tab).unwrap().get_protocol().rotation.step_mode;
+                                    ui.label("Step mode:");
+                                    egui::ComboBox::from_id_source("step_mode_rotation")
+                                        .selected_text(selected_mode.to_string())
+                                        .show_ui(ui, |ui| {
+                                            for mode in modes {
+                                                if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.step_mode, mode, mode.to_string()).changed() {
+                                                    rotation_graph_needs_update = true;
+                                                }
                                             }
-                                        }
-                                    });
-                            });
-                            // Duration for 1 direction cycle
-                            ui.horizontal(|ui| {
-                                ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
-                                let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Rotation cycle duration")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
                                         });
-                                }
-                                if response.changed() {
-                                    rotation_graph_needs_update = true;
-                                }
-                            });
-                            // Direction
-                            let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
-                            let selected_direction = self.motor.get(tab).unwrap().get_protocol().rotation.direction;
-                            ui.horizontal(|ui| {
-                                ui.label("Direction:");
-                                egui::ComboBox::from_id_source("direction_rotation")
-                                    .selected_text(selected_direction.to_string())
-                                    .show_ui(ui, |ui| {
-                                        for direction in directions {
-                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.direction, direction, direction.to_string());
-                                        }
-                                    });
-                            });
-                            // Pause before direction change
-                            ui.horizontal(|ui| {
-                                ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
-                                let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Pause before rotation change")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                    ui.end_row();
+                                    // Duration for 1 direction cycle
+                                    ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
+                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Rotation cycle duration")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                            });
+                                    }
+                                    if response.changed() {
+                                        rotation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // Direction
+                                    let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
+                                    let selected_direction = self.motor.get(tab).unwrap().get_protocol().rotation.direction;
+                                    ui.label("Direction:");
+                                    egui::ComboBox::from_id_source("direction_rotation")
+                                        .selected_text(selected_direction.to_string())
+                                        .show_ui(ui, |ui| {
+                                            for direction in directions {
+                                                ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.direction, direction, direction.to_string());
+                                            }
                                         });
+                                    ui.end_row();
+                                    // Pause before direction change
+                                    ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
+                                    let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Pause before rotation change")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                            });
+                                    }
+                                    ui.end_row();
+                                    // Slider for rotation duration
+                                    ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
+                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Rotation duration")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                            });
+                                    }
+                                    ui.end_row();
+                                    // Slider for pause before agitation
+                                    ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
+                                    let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_before_agitation_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Pause pre-agitation")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                            });
+                                    }
+                                });
+                            if rotation_graph_needs_update {
+                                let max_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
+                                let current_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.rpm;
+                                if current_rpm_rotation > max_rpm_rotation {
+                                    self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm = max_rpm_rotation;
                                 }
-                            });
-                            // Slider for rotation duration
-                            ui.horizontal(|ui| {
-                                ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
-                                let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Rotation duration")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
-                                        });
-                                }
-                            });
-                            // Slider for pause before agitation
-                            ui.horizontal(|ui| {
-                                ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
-                                let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_before_agitation_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Pause pre-agitation")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
-                                        });
-                                }
-                            });
-                        });
-                        if rotation_graph_needs_update {
-                            let max_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.max_rpm_for_stepmode();
-                            let current_rpm_rotation = self.motor.get(tab).unwrap().get_protocol().rotation.rpm;
-                            if current_rpm_rotation > max_rpm_rotation {
-                                self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.rpm = max_rpm_rotation;
+                                self.motor.get(tab).unwrap().generate_graph_rotation();
+                                rotation_graph_needs_update = false;
                             }
-                            self.motor.get(tab).unwrap().generate_graph_rotation();
-                            rotation_graph_needs_update = false;
-                        }
+                        });
                     });
                     ui.separator();
                     // Setup agitation phase
                     let mut agitation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
                         ui.vertical(|ui| {
-                            ui.horizontal(|ui| {
-                                ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
-                            });
+                            ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
-                            // Slider for RPM
-                            ui.horizontal(|ui| {
-                                ui.label("RPM:");
-                                let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm_for_stepmode();
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm)).changed() {
-                                    agitation_graph_needs_update = true;
-                                }
-                            });
-                            // Slider for acceleration
-                            ui.horizontal(|ui| {
-                                ui.label("Acceleration:");
-                                if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.acceleration, 1..=MAX_ACCELERATION)).changed() {
-                                    agitation_graph_needs_update = true;
-                                }
-                            });
-                            // List for stepmode
-                            let modes = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode.get_modes();
-                            let selected_mode = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode;
-                            ui.horizontal(|ui| {
-                                ui.label("Step mode:");
-                                egui::ComboBox::from_id_source("step_mode_agitation")
-                                    .selected_text(selected_mode.to_string())
-                                    .show_ui(ui, |ui| {
-                                        for mode in modes {
-                                            if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.step_mode, mode, mode.to_string()).changed() {
-                                                agitation_graph_needs_update = true;
+                            egui::Grid::new("agitation_grid")
+                                .show(ui, |ui| {
+                                    // Slider for RPM
+                                    ui.label("RPM:");
+                                    let max_rpm = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm_for_stepmode();
+                                    if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.rpm, 1..=max_rpm)).changed() {
+                                        agitation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // Slider for acceleration
+                                    ui.label("Acceleration:");
+                                    if ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.acceleration, 1..=MAX_ACCELERATION)).changed() {
+                                        agitation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // List for stepmode
+                                    let modes = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode.get_modes();
+                                    let selected_mode = self.motor.get(tab).unwrap().get_protocol().agitation.step_mode;
+                                    ui.label("Step mode:");
+                                    egui::ComboBox::from_id_source("step_mode_agitation")
+                                        .selected_text(selected_mode.to_string())
+                                        .show_ui(ui, |ui| {
+                                            for mode in modes {
+                                                if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.step_mode, mode, mode.to_string()).changed() {
+                                                    agitation_graph_needs_update = true;
+                                                }
                                             }
-                                        }
-                                    });
-                            });
-                            // Duration for 1 direction cycle
-                            ui.horizontal(|ui| {
-                                ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
-                                let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Agitation cycle duration")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
                                         });
-                                }
-                                if response.changed() {
-                                    agitation_graph_needs_update = true;
-                                }
-                            });
-                            // Direction
-                            let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
-                            let selected_direction = self.motor.get(tab).unwrap().get_protocol().agitation.direction;
-                            ui.horizontal(|ui| {
-                                ui.label("Direction:");
-                                egui::ComboBox::from_id_source("direction_agitation")
-                                    .selected_text(selected_direction.to_string())
-                                    .show_ui(ui, |ui| {
-                                        for direction in directions {
-                                            ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.direction, direction, direction.to_string());
-                                        }
-                                    });
-                            });
-                            // Pause before direction change
-                            ui.horizontal(|ui| {
-                                ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
-                                let current_pause = self.motor.get(tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Pause before agitation change")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                    ui.end_row();
+                                    // Duration for 1 direction cycle
+                                    ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of agitations in one direction.");
+                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Agitation cycle duration")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                            });
+                                    }
+                                    if response.changed() {
+                                        agitation_graph_needs_update = true;
+                                    }
+                                    ui.end_row();
+                                    // Direction
+                                    let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
+                                    let selected_direction = self.motor.get(tab).unwrap().get_protocol().agitation.direction;
+                                    ui.label("Direction:");
+                                    egui::ComboBox::from_id_source("direction_agitation")
+                                        .selected_text(selected_direction.to_string())
+                                        .show_ui(ui, |ui| {
+                                            for direction in directions {
+                                                ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.direction, direction, direction.to_string());
+                                            }
                                         });
-                                }
-                            });
-                            // Slider for agitation duration
-                            ui.horizontal(|ui| {
-                                ui.label("Agitation duration (ms):").on_hover_text("Duration of the agitation phase.");
-                                let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Agitation duration")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
-                                        });
-                                }
-                            });
-                            // Slider for pause after agitation
-                            ui.horizontal(|ui| {
-                                ui.label("Pause post-agitation (ms):").on_hover_text("Pause after the agitation phase.");
-                                let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_after_agitation_ms;
-                                let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Pause post-agitation")
-                                        .collapsible(false)
-                                        .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                        .show(&self.main_context, |ui| {
-                                            ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
-                                        });
-                                }
-                            });
+                                    ui.end_row();
+                                    // Pause before direction change
+
+                                    ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of agitation.");
+                                    let current_pause = self.motor.get(tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Pause before agitation change")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                            });
+                                    }
+                                    ui.end_row();
+                                    // Slider for agitation duration
+
+                                    ui.label("Agitation duration (ms):").on_hover_text("Duration of the agitation phase.");
+                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Agitation duration")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                            });
+                                    }
+                                    ui.end_row();
+                                    // Slider for pause after agitation
+                                    ui.label("Pause post-agitation (ms):").on_hover_text("Pause after the agitation phase.");
+                                    let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_after_agitation_ms;
+                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    if response.hovered() || response.has_focus() || response.dragged() {
+                                        egui::Window::new("Pause post-agitation")
+                                            .collapsible(false)
+                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                            .show(&self.main_context, |ui| {
+                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                            });
+                                    }
+                                });
                         });
                         if agitation_graph_needs_update {
                             let max_rpm_agitation = self.motor.get(tab).unwrap().get_protocol().agitation.max_rpm_for_stepmode();
@@ -454,7 +440,7 @@ impl TabViewer for Tabs<'_> {
                     });
                     ui.separator();
                     // Setup durations
-                    ui.allocate_ui(egui::vec2(340.0, 280.0), |ui| {
+                    ui.allocate_ui(egui::vec2(360.0, 280.0), |ui| {
                         ui.vertical(|ui| {
                             ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
