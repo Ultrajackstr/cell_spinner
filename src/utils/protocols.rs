@@ -145,6 +145,10 @@ impl Protocol {
         self.rotation_duration_ms + self.pause_before_agitation_ms + self.agitation_duration_ms + self.pause_after_agitation_ms
     }
 
+    pub fn get_duration_without_pause(&self) -> u64 {
+        self.rotation_duration_ms + self.agitation_duration_ms
+    }
+
     /// Protocol to bytes for serial communication
     pub fn bytes_vec_to_send(&self) -> Vec<u8> {
         let mut bytes = [0u8; BYTES];

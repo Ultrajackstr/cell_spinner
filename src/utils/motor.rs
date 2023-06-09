@@ -117,6 +117,10 @@ impl Motor {
         if min_agitation_duration == 0 {
             self.protocol.agitation_duration_ms = min_agitation_duration;
         }
+        let duration_without_pause = self.protocol.get_duration_without_pause();
+        if duration_without_pause == 0 {
+            self.protocol.global_duration_ms = 0;
+        }
         self.is_running.store(true, Ordering::Relaxed);
         self.start_run_time();
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, message_tx);
@@ -136,7 +140,7 @@ impl Motor {
             while is_running.load(Ordering::Relaxed) {
                 let elapsed_time = start_time.elapsed();
                 *run_time_ms.lock().unwrap() = elapsed_time;
-                std::thread::sleep(Duration::from_millis(THREAD_SLEEP));
+                thread::sleep(Duration::from_millis(THREAD_SLEEP));
             }
         });
     }
@@ -151,6 +155,9 @@ impl Motor {
         }
         if protocol.rotation.rpm > protocol.rotation.max_rpm_for_stepmode() || protocol.agitation.rpm > protocol.agitation.max_rpm_for_stepmode() {
             bail!("The rpm of the rotation or agitation is higher than the max rpm");
+        }
+        if protocol.get_duration_without_pause() == 0 {
+            self.protocol.global_duration_ms = 0;
         }
         if protocol.rotation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS || protocol.agitation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS
             || protocol.rotation.pause_before_direction_change_ms > MAX_DURATION_MS || protocol.agitation.pause_before_direction_change_ms > MAX_DURATION_MS
