@@ -253,7 +253,7 @@ impl TabViewer for Tabs<'_> {
                                 let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
                                 let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
                                 if response.hovered() || response.has_focus() || response.dragged() {
-                                    egui::Window::new("Rotation ycle duration")
+                                    egui::Window::new("Rotation cycle duration")
                                         .collapsible(false)
                                         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
                                         .show(&self.main_context, |ui| {
