@@ -21,7 +21,7 @@ LegalCopyright = "Copyright © 2023 - Giacomo Gropplero"
 egui = "0.22.0"
 eframe = { version = "0.22.0", default-features = false, features = ["glow"] }
 egui-toast = { git = "https://github.com/Ultrajackstr/egui-toast.git" }
-egui_dock = "0.6.1"
+egui_dock = "0.6.2"
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.96"
@@ -36,8 +36,8 @@ anyhow = "1.0.71"
 dashmap = "5.4.0"
 serialport = "4.2.1"
 rfd = "0.11.4"
-stepgen_new = { path = "../stepgen_new" }
-#stepgen_new = { git = "ssh://git@github.com/Ultrajackstr/stepgen_new.git", branch = "time" }
+#stepgen_new = { path = "../stepgen_new" }
+stepgen_new = { git = "ssh://git@github.com/Ultrajackstr/stepgen_new.git", branch = "time" }
 fugit = "0.3.7"
 
 catppuccin-egui = "3.0.0"

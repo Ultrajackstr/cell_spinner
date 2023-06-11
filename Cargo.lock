@@ -710,9 +710,9 @@ dependencies = [
 
 [[package]]
 name = "egui_dock"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf75299c1f1dca5fd7c498c682803cf8e0f00e107772b1cfc2e48309d7083148"
+checksum = "6c12e6f4b175be951d85ab7c0c81138797a25bfcf74387f3999e11c229d548e3"
 dependencies = [
  "duplicate",
  "egui",
@@ -1489,9 +1489,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.18"
+version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "518ef76f2f87365916b142844c16d8fefd85039bc5699050210a7778ee1cd1de"
+checksum = "b06a4cde4c0f271a446782e3eff8de789548ce57dbc8eca9292c27f4a42004b4"
 
 [[package]]
 name = "log-panics"
@@ -1936,9 +1936,9 @@ checksum = "26072860ba924cbfa98ea39c8c19b4dd6a4a25423dbdf219c1eca91aa0cf6964"
 
 [[package]]
 name = "png"
-version = "0.17.8"
+version = "0.17.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aaeebc51f9e7d2c150d3f3bfeb667f2aa985db5ef1e3d212847bdedb488beeaa"
+checksum = "59871cc5b6cce7eaccca5a802b4173377a1c2ba90654246789a8fa2334426d11"
 dependencies = [
  "bitflags 1.3.2",
  "crc32fast",
@@ -2331,6 +2331,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stepgen_new"
 version = "0.3.0"
+source = "git+ssh://git@github.com/Ultrajackstr/stepgen_new.git?branch=time#1febcfaae4afc3bb0d65ca9680cb83655f53e929"
 dependencies = [
  "fixed",
  "fixed-macro",
