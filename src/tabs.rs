@@ -264,7 +264,7 @@ impl TabViewer for Tabs<'_> {
                                     // Direction
                                     let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
                                     let selected_direction = self.motor.get(tab).unwrap().get_protocol().rotation.direction;
-                                    ui.label("Direction:");
+                                    ui.label("Direction:").on_hover_text("Initial direction");
                                     egui::ComboBox::from_id_source("direction_rotation")
                                         .selected_text(selected_direction.to_string())
                                         .show_ui(ui, |ui| {
@@ -378,7 +378,7 @@ impl TabViewer for Tabs<'_> {
                                     // Direction
                                     let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
                                     let selected_direction = self.motor.get(tab).unwrap().get_protocol().agitation.direction;
-                                    ui.label("Direction:");
+                                    ui.label("Direction:").on_hover_text("Initial direction.");
                                     egui::ComboBox::from_id_source("direction_agitation")
                                         .selected_text(selected_direction.to_string())
                                         .show_ui(ui, |ui| {

@@ -3,6 +3,8 @@ use std::sync::mpsc::{Receiver, Sender};
 use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
 
+use crate::app::MAX_DURATION_MS;
+
 pub struct FontAndButtonSize {
     pub font_table: f32,
     pub font_default: f32,
@@ -75,3 +77,117 @@ pub struct WindowsState {
     pub is_confirmation_dialog_open: bool,
     pub is_error_log_open: bool,
 }
+
+#[derive(Default)]
+pub struct DurationHelper {
+    pub days: u64,
+    pub hours: u64,
+    pub minutes: u64,
+    pub seconds: u64,
+    pub milliseconds: u64,
+}
+
+impl DurationHelper {
+    pub fn convert_to_milliseconds(&self) -> u64 {
+        self.days * 24 * 60 * 60 * 1000 + self.hours * 60 * 60 * 1000 + self.minutes * 60 * 1000 + self.seconds * 1000 + self.milliseconds
+    }
+
+    pub fn get_mut_days(&mut self) -> &mut u64 {
+        &mut self.days
+    }
+
+    pub fn get_mut_hours(&mut self) -> &mut u64 {
+        &mut self.hours
+    }
+
+    pub fn get_mut_minutes(&mut self) -> &mut u64 {
+        &mut self.minutes
+    }
+
+    pub fn get_mut_seconds(&mut self) -> &mut u64 {
+        &mut self.seconds
+    }
+
+    pub fn get_mut_milliseconds(&mut self) -> &mut u64 {
+        &mut self.milliseconds
+    }
+
+    pub fn check_if_duration_is_greater_than_max_duration(&self) -> bool {
+        self.convert_to_milliseconds() > MAX_DURATION_MS
+    }
+}
+
+#[derive(Default)]
+pub struct Durations {
+    pub rotation_cycle_duration: DurationHelper,
+    pub pause_between_rotation: DurationHelper,
+    pub rotation_global_duration: DurationHelper,
+    pub pause_pre_agitation: DurationHelper,
+    pub agitation_cycle_duration: DurationHelper,
+    pub pause_between_agitation: DurationHelper,
+    pub agitation_global_duration: DurationHelper,
+    pub global_duration: DurationHelper,
+}
+
+impl Durations {
+    pub fn get_mut_rotation_cycle_duration(&mut self) -> &mut DurationHelper {
+        &mut self.rotation_cycle_duration
+    }
+
+    pub fn get_mut_pause_between_rotation(&mut self) -> &mut DurationHelper {
+        &mut self.pause_between_rotation
+    }
+
+    pub fn get_mut_rotation_global_duration(&mut self) -> &mut DurationHelper {
+        &mut self.rotation_global_duration
+    }
+
+    pub fn get_mut_pause_pre_agitation(&mut self) -> &mut DurationHelper {
+        &mut self.pause_pre_agitation
+    }
+
+    pub fn get_mut_agitation_cycle_duration(&mut self) -> &mut DurationHelper {
+        &mut self.agitation_cycle_duration
+    }
+
+    pub fn get_mut_pause_between_agitation(&mut self) -> &mut DurationHelper {
+        &mut self.pause_between_agitation
+    }
+
+    pub fn get_mut_agitation_global_duration(&mut self) -> &mut DurationHelper {
+        &mut self.agitation_global_duration
+    }
+
+    pub fn get_mut_global_duration(&mut self) -> &mut DurationHelper {
+        &mut self.global_duration
+    }
+
+    pub fn get_rotation_cycle_duration(&self) -> &DurationHelper {
+        &self.rotation_cycle_duration
+    }
+
+    pub fn get_pause_between_rotation(&self) -> &DurationHelper {
+        &self.pause_between_rotation
+    }
+
+    pub fn get_rotation_global_duration(&self) -> &DurationHelper {
+        &self.rotation_global_duration
+    }
+
+    pub fn get_pause_pre_agitation(&self) -> &DurationHelper {
+        &self.pause_pre_agitation
+    }
+
+    pub fn get_agitation_cycle_duration(&self) -> &DurationHelper {
+        &self.agitation_cycle_duration
+    }
+
+    pub fn get_pause_between_agitation(&self) -> &DurationHelper {
+        &self.pause_between_agitation
+    }
+
+    pub fn get_agitation_global_duration(&self) -> &DurationHelper {
+        &self.agitation_global_duration
+    }
+}
+
