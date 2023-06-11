@@ -127,28 +127,28 @@ impl DurationHelper {
 
 #[derive(Default)]
 pub struct Durations {
-    pub rotation_cycle_duration: DurationHelper,
-    pub pause_between_rotation: DurationHelper,
-    pub rotation_global_duration: DurationHelper,
+    pub duration_of_one_direction_cycle_rotation: DurationHelper,
+    pub pause_before_direction_change_rotation: DurationHelper,
+    pub rotation_duration: DurationHelper,
     pub pause_pre_agitation: DurationHelper,
-    pub agitation_cycle_duration: DurationHelper,
-    pub pause_between_agitation: DurationHelper,
-    pub agitation_global_duration: DurationHelper,
+    pub duration_of_one_direction_cycle_agitation: DurationHelper,
+    pub pause_before_direction_change_agitation: DurationHelper,
+    pub agitation_duration: DurationHelper,
     pub pause_post_agitation: DurationHelper,
     pub global_duration: DurationHelper,
 }
 
 impl Durations {
     pub fn get_mut_rotation_cycle_duration(&mut self) -> &mut DurationHelper {
-        &mut self.rotation_cycle_duration
+        &mut self.duration_of_one_direction_cycle_rotation
     }
 
     pub fn get_mut_pause_between_rotation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_between_rotation
+        &mut self.pause_before_direction_change_rotation
     }
 
     pub fn get_mut_rotation_global_duration(&mut self) -> &mut DurationHelper {
-        &mut self.rotation_global_duration
+        &mut self.rotation_duration
     }
 
     pub fn get_mut_pause_pre_agitation(&mut self) -> &mut DurationHelper {
@@ -156,15 +156,15 @@ impl Durations {
     }
 
     pub fn get_mut_agitation_cycle_duration(&mut self) -> &mut DurationHelper {
-        &mut self.agitation_cycle_duration
+        &mut self.duration_of_one_direction_cycle_agitation
     }
 
     pub fn get_mut_pause_between_agitation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_between_agitation
+        &mut self.pause_before_direction_change_agitation
     }
 
     pub fn get_mut_agitation_global_duration(&mut self) -> &mut DurationHelper {
-        &mut self.agitation_global_duration
+        &mut self.agitation_duration
     }
 
     pub fn get_mut_pause_post_agitation(&mut self) -> &mut DurationHelper {
@@ -176,15 +176,15 @@ impl Durations {
     }
 
     pub fn get_rotation_cycle_duration(&self) -> &DurationHelper {
-        &self.rotation_cycle_duration
+        &self.duration_of_one_direction_cycle_rotation
     }
 
     pub fn get_pause_between_rotation(&self) -> &DurationHelper {
-        &self.pause_between_rotation
+        &self.pause_before_direction_change_rotation
     }
 
     pub fn get_rotation_global_duration(&self) -> &DurationHelper {
-        &self.rotation_global_duration
+        &self.rotation_duration
     }
 
     pub fn get_pause_pre_agitation(&self) -> &DurationHelper {
@@ -192,11 +192,11 @@ impl Durations {
     }
 
     pub fn get_agitation_cycle_duration(&self) -> &DurationHelper {
-        &self.agitation_cycle_duration
+        &self.duration_of_one_direction_cycle_agitation
     }
 
     pub fn get_pause_between_agitation(&self) -> &DurationHelper {
-        &self.pause_between_agitation
+        &self.pause_before_direction_change_agitation
     }
 
     pub fn get_pause_post_agitation(&self) -> &DurationHelper {
@@ -204,7 +204,7 @@ impl Durations {
     }
 
     pub fn get_agitation_global_duration(&self) -> &DurationHelper {
-        &self.agitation_global_duration
+        &self.agitation_duration
     }
 
     pub fn get_global_duration(&self) -> &DurationHelper {

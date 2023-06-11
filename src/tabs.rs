@@ -362,19 +362,19 @@ impl TabViewer for Tabs<'_> {
                                     ui.label("Pause pre-agitation:").on_hover_text("Pause before the agitation phase.");
                                     ui.horizontal(|ui| {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_minutes()).suffix(" min").clamp_range(0..=59)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_before_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                     });
                                     // let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_before_agitation_ms;
@@ -549,19 +549,19 @@ impl TabViewer for Tabs<'_> {
                                     ui.label("Pause post-agitation:").on_hover_text("Pause after the agitation phase.");
                                     ui.horizontal(|ui| {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_minutes()).suffix(" min").clamp_range(0..=59)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
-                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_after_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                     });
                                     // let current_pause = self.motor.get(tab).unwrap().get_protocol().pause_after_agitation_ms;

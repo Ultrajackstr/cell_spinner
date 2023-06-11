@@ -108,10 +108,10 @@ impl Rotation {
 pub struct Protocol {
     pub rotation: Rotation,
     pub rotation_duration_ms: u64,
-    pub pause_before_agitation_ms: u64,
+    pub pause_pre_agitation_ms: u64,
     pub agitation: Rotation,
     pub agitation_duration_ms: u64,
-    pub pause_after_agitation_ms: u64,
+    pub pause_post_agitation_ms: u64,
     pub global_duration_ms: u64,
 }
 
@@ -121,10 +121,10 @@ impl Protocol {
         Self {
             rotation,
             rotation_duration_ms,
-            pause_before_agitation_ms,
+            pause_pre_agitation_ms: pause_before_agitation_ms,
             agitation,
             agitation_duration_ms,
-            pause_after_agitation_ms,
+            pause_post_agitation_ms: pause_after_agitation_ms,
             global_duration_ms,
         }
     }
@@ -133,16 +133,16 @@ impl Protocol {
         Self {
             rotation: Rotation::test_rotation(),
             rotation_duration_ms: 10000,
-            pause_before_agitation_ms: 1000,
+            pause_pre_agitation_ms: 1000,
             agitation: Rotation::test_agitation(),
             agitation_duration_ms: 10000,
-            pause_after_agitation_ms: 1000,
+            pause_post_agitation_ms: 1000,
             global_duration_ms: 60_000,
         }
     }
 
     pub fn duration(&self) -> u64 {
-        self.rotation_duration_ms + self.pause_before_agitation_ms + self.agitation_duration_ms + self.pause_after_agitation_ms
+        self.rotation_duration_ms + self.pause_pre_agitation_ms + self.agitation_duration_ms + self.pause_post_agitation_ms
     }
 
     pub fn get_duration_without_pause(&self) -> u64 {
@@ -155,10 +155,10 @@ impl Protocol {
         bytes[0] = b'a';
         bytes[1..35].copy_from_slice(&self.rotation.to_bytes());
         bytes[35..43].copy_from_slice(&self.rotation_duration_ms.to_le_bytes());
-        bytes[43..51].copy_from_slice(&self.pause_before_agitation_ms.to_le_bytes());
+        bytes[43..51].copy_from_slice(&self.pause_pre_agitation_ms.to_le_bytes());
         bytes[51..85].copy_from_slice(&self.agitation.to_bytes());
         bytes[85..93].copy_from_slice(&self.agitation_duration_ms.to_le_bytes());
-        bytes[93..101].copy_from_slice(&self.pause_after_agitation_ms.to_le_bytes());
+        bytes[93..101].copy_from_slice(&self.pause_post_agitation_ms.to_le_bytes());
         bytes[101..109].copy_from_slice(&self.global_duration_ms.to_le_bytes());
         bytes[109] = b'z';
         bytes.to_vec()

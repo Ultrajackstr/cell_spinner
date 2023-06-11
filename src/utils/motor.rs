@@ -162,10 +162,11 @@ impl Motor {
         if protocol.rotation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS || protocol.agitation.duration_of_one_direction_cycle_ms > MAX_DURATION_MS
             || protocol.rotation.pause_before_direction_change_ms > MAX_DURATION_MS || protocol.agitation.pause_before_direction_change_ms > MAX_DURATION_MS
             || protocol.global_duration_ms > MAX_DURATION_MS || protocol.rotation_duration_ms > MAX_DURATION_MS || protocol.agitation_duration_ms > MAX_DURATION_MS
-            || protocol.pause_before_agitation_ms > MAX_DURATION_MS || protocol.pause_after_agitation_ms > MAX_DURATION_MS
+            || protocol.pause_pre_agitation_ms > MAX_DURATION_MS || protocol.pause_post_agitation_ms > MAX_DURATION_MS
         {
             bail!("Some duration is too high");
         }
+
         self.protocol = protocol;
         Ok(())
     }
