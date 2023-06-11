@@ -329,17 +329,18 @@ impl CellSpinner {
                     motor.generate_graph_rotation();
                     motor.generate_graph_agitation();
                 });
-                self.durations.iter_mut().enumerate().for_each(|(tab, mut durations)| {
-                    durations.duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(&tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(&tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms);
-                    durations.duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(&tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(&tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms);
-                    let rotation_duration = self.motor.get(&tab).unwrap().get_protocol().rotation_duration_ms;
-                    let agitation_duration = self.motor.get(&tab).unwrap().get_protocol().agitation_duration_ms;
+                self.durations.iter_mut().for_each(|mut durations| {
+                    let key = *durations.key();
+                    durations.duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().rotation.pause_before_direction_change_ms);
+                    durations.duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().agitation.pause_before_direction_change_ms);
+                    let rotation_duration = self.motor.get(&key).unwrap().get_protocol().rotation_duration_ms;
+                    let agitation_duration = self.motor.get(&key).unwrap().get_protocol().agitation_duration_ms;
                     durations.rotation_duration.convert_from_milliseconds(rotation_duration);
                     durations.agitation_duration.convert_from_milliseconds(agitation_duration);
-                    let pause_pre_agitation = self.motor.get(&tab).unwrap().get_protocol().pause_pre_agitation_ms;
-                    let pause_post_agitation = self.motor.get(&tab).unwrap().get_protocol().pause_post_agitation_ms;
+                    let pause_pre_agitation = self.motor.get(&key).unwrap().get_protocol().pause_pre_agitation_ms;
+                    let pause_post_agitation = self.motor.get(&key).unwrap().get_protocol().pause_post_agitation_ms;
                     durations.pause_pre_agitation.convert_from_milliseconds(pause_pre_agitation);
                     durations.pause_post_agitation.convert_from_milliseconds(pause_post_agitation);
                 });
