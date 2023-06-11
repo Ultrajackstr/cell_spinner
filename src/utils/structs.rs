@@ -92,6 +92,14 @@ impl DurationHelper {
         self.days * 24 * 60 * 60 * 1000 + self.hours * 60 * 60 * 1000 + self.minutes * 60 * 1000 + self.seconds * 1000 + self.milliseconds
     }
 
+    pub fn convert_from_milliseconds(&mut self, milliseconds: u64) {
+        self.days = milliseconds / (24 * 60 * 60 * 1000);
+        self.hours = (milliseconds - self.days * 24 * 60 * 60 * 1000) / (60 * 60 * 1000);
+        self.minutes = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000) / (60 * 1000);
+        self.seconds = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000) / 1000;
+        self.milliseconds = milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000 - self.seconds * 1000;
+    }
+
     pub fn get_mut_days(&mut self) -> &mut u64 {
         &mut self.days
     }
@@ -126,6 +134,7 @@ pub struct Durations {
     pub agitation_cycle_duration: DurationHelper,
     pub pause_between_agitation: DurationHelper,
     pub agitation_global_duration: DurationHelper,
+    pub pause_post_agitation: DurationHelper,
     pub global_duration: DurationHelper,
 }
 
@@ -158,6 +167,10 @@ impl Durations {
         &mut self.agitation_global_duration
     }
 
+    pub fn get_mut_pause_post_agitation(&mut self) -> &mut DurationHelper {
+        &mut self.pause_post_agitation
+    }
+
     pub fn get_mut_global_duration(&mut self) -> &mut DurationHelper {
         &mut self.global_duration
     }
@@ -186,8 +199,16 @@ impl Durations {
         &self.pause_between_agitation
     }
 
+    pub fn get_pause_post_agitation(&self) -> &DurationHelper {
+        &self.pause_post_agitation
+    }
+
     pub fn get_agitation_global_duration(&self) -> &DurationHelper {
         &self.agitation_global_duration
+    }
+
+    pub fn get_global_duration(&self) -> &DurationHelper {
+        &self.global_duration
     }
 }
 
