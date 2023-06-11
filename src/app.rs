@@ -19,7 +19,7 @@ use crate::tabs::Tabs;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
 use crate::utils::protocols::Protocol;
-use crate::utils::structs::{Channels, FontAndButtonSize, Message, WindowsState};
+use crate::utils::structs::{Channels, Durations, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
@@ -64,6 +64,7 @@ pub struct CellSpinner {
     already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
     motor_name: DashMap<usize, String>,
+    durations: DashMap<usize, Durations>,
     //Only to prevent loss of focus while changing the name...
     motor: Arc<DashMap<usize, Motor>>,
     // Tabs
@@ -103,6 +104,7 @@ impl Default for CellSpinner {
             motor: Arc::new(Default::default()),
             motor_name: Default::default(),
             path_config: home_dir().unwrap(),
+            durations: Default::default(),
         }
     }
 }
@@ -180,6 +182,7 @@ impl CellSpinner {
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
         self.motor.insert(tab, Motor::default());
+        self.durations.insert(tab, Durations::default());
         self.motor.get_mut(&tab).unwrap().set_name(&format!("Motor {}", tab));
         self.motor_name.insert(tab, format!("Motor {}", tab));
         let available_ports = match serialport::available_ports() {
@@ -463,6 +466,7 @@ impl eframe::App for CellSpinner {
                     selected_port: &mut self.selected_port,
                     motor_name: &mut self.motor_name,
                     motor: &mut self.motor,
+                    durations: &mut self.durations,
                     promise_serial_connect: &mut self.promise_serial_connect,
                     added_nodes: &mut added_nodes,
                     added_tabs: &mut self.added_tabs,

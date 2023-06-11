@@ -10,7 +10,7 @@ use egui_toast::ToastKind;
 use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THEME};
 use crate::utils::enums::Direction;
 use crate::utils::motor::Motor;
-use crate::utils::structs::{Channels, Message};
+use crate::utils::structs::{Channels, Durations, Message};
 
 pub struct Tabs<'a> {
     pub channels: &'a mut Channels,
@@ -20,6 +20,7 @@ pub struct Tabs<'a> {
     pub selected_port: &'a mut DashMap<usize, String>,
     pub motor_name: &'a mut DashMap<usize, String>,
     pub motor: &'a mut Arc<DashMap<usize, Motor>>,
+    pub durations: &'a mut DashMap<usize, Durations>,
     pub promise_serial_connect: &'a mut Arc<DashMap<usize, Option<()>>>,
     pub added_nodes: &'a mut Vec<NodeIndex>,
     pub added_tabs: &'a mut Vec<usize>,
@@ -32,6 +33,7 @@ impl Tabs<'_> {
     fn init_tab(&mut self, tab: usize) {
         self.promise_serial_connect.insert(tab, None);
         self.motor.insert(tab, Motor::default());
+        self.durations.insert(tab, Durations::default());
         self.motor.get_mut(&tab).unwrap().set_name(&format!("Motor {}", tab));
         self.motor_name.insert(tab, format!("Motor {}", tab));
         self.added_tabs.push(tab);
@@ -46,6 +48,7 @@ impl Tabs<'_> {
         self.promise_serial_connect.remove(&tab);
         self.motor_name.remove(&tab);
         self.motor.remove(&tab);
+        self.durations.remove(&tab);
         self.added_tabs.retain(|x| x != &tab);
     }
 
@@ -246,20 +249,37 @@ impl TabViewer for Tabs<'_> {
                                         });
                                     ui.end_row();
                                     // Duration for 1 direction cycle
-                                    ui.label("Cycle duration (ms):").on_hover_text("Duration of a cycle of rotations in one direction.");
-                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
-                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                    if response.hovered() || response.has_focus() || response.dragged() {
-                                        egui::Window::new("Rotation cycle duration")
-                                            .collapsible(false)
-                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                            .show(&self.main_context, |ui| {
-                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
-                                            });
-                                    }
-                                    if response.changed() {
-                                        rotation_graph_needs_update = true;
-                                    }
+                                    ui.label("Cycle duration:").on_hover_text("Duration of a cycle of rotations in one direction.");
+                                    ui.horizontal(|ui| {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_minutes()).suffix(" min").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
+                                        }
+                                    });
+                                    // let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms;
+                                    // let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    // if response.hovered() || response.has_focus() || response.dragged() {
+                                    //     egui::Window::new("Rotation cycle duration")
+                                    //         .collapsible(false)
+                                    //         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                    //         .show(&self.main_context, |ui| {
+                                    //             ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                    //         });
+                                    // }
+                                    // if response.changed() {
+                                    //     rotation_graph_needs_update = true;
+                                    // }
                                     ui.end_row();
                                     // Direction
                                     let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
@@ -275,29 +295,63 @@ impl TabViewer for Tabs<'_> {
                                     ui.end_row();
                                     // Pause before direction change
                                     ui.label("Pause (ms):").on_hover_text("Pause before changing the direction of rotation.");
-                                    let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
-                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                    if response.hovered() || response.has_focus() || response.dragged() {
-                                        egui::Window::new("Pause before rotation change")
-                                            .collapsible(false)
-                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                            .show(&self.main_context, |ui| {
-                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
-                                            });
-                                    }
+                                    ui.horizontal(|ui| {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_minutes()).suffix(" min").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
+                                        }
+                                    });
+                                    // let current_pause = self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms;
+                                    // let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    // if response.hovered() || response.has_focus() || response.dragged() {
+                                    //     egui::Window::new("Pause before rotation change")
+                                    //         .collapsible(false)
+                                    //         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                    //         .show(&self.main_context, |ui| {
+                                    //             ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_pause / 86400000, (current_pause % 86400000) / 3600000, (current_pause % 3600000) / 60000, (current_pause % 60000) / 1000));
+                                    //         });
+                                    // }
                                     ui.end_row();
                                     // Slider for rotation duration
                                     ui.label("Rotation duration (ms):").on_hover_text("Duration of the rotation phase.");
-                                    let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
-                                    let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
-                                    if response.hovered() || response.has_focus() || response.dragged() {
-                                        egui::Window::new("Rotation duration")
-                                            .collapsible(false)
-                                            .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
-                                            .show(&self.main_context, |ui| {
-                                                ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
-                                            });
-                                    }
+                                    ui.horizontal(|ui| {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_minutes()).suffix(" min").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms= self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
+                                        }
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                            self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms= self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
+                                        }
+                                    });
+                                    // let current_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
+                                    // let response = ui.add(egui::Slider::new(&mut self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms, 0..=MAX_DURATION_MS).logarithmic(true));
+                                    // if response.hovered() || response.has_focus() || response.dragged() {
+                                    //     egui::Window::new("Rotation duration")
+                                    //         .collapsible(false)
+                                    //         .default_pos(response.rect.left_bottom() + egui::vec2(0.0, 20.0))
+                                    //         .show(&self.main_context, |ui| {
+                                    //             ui.label(format!("{} days\n{} hours\n{} minutes\n{} seconds", current_duration / 86400000, (current_duration % 86400000) / 3600000, (current_duration % 3600000) / 60000, (current_duration % 60000) / 1000));
+                                    //         });
+                                    // }
                                     ui.end_row();
                                     // Slider for pause before agitation
                                     ui.label("Pause pre-agitation (ms):").on_hover_text("Pause before the agitation phase.");
