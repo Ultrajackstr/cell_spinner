@@ -8,7 +8,7 @@ use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
 use fugit::TimerInstantU64;
 
-use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THREAD_SLEEP};
+use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS};
 use crate::utils::enums::StepperState;
 use crate::utils::graph::Graph;
 use crate::utils::protocols::Protocol;

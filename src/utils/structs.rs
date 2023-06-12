@@ -4,7 +4,6 @@ use std::time::Instant;
 use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
 
-use crate::app::MAX_DURATION_MS;
 use crate::utils::enums::StepperState;
 
 pub struct FontAndButtonSize {
@@ -60,10 +59,6 @@ impl Message {
             is_waiting,
         }
     }
-
-    pub fn set_origin(&mut self, origin: &str) {
-        self.origin = Some(origin.into());
-    }
 }
 
 #[derive(Default)]
@@ -100,10 +95,6 @@ impl DurationHelper {
         self.minutes = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000) / (60 * 1000);
         self.seconds = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000) / 1000;
         self.milliseconds = milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000 - self.seconds * 1000;
-    }
-
-    pub fn check_if_duration_is_greater_than_max_duration(&self) -> bool {
-        self.convert_to_milliseconds() > MAX_DURATION_MS
     }
 }
 

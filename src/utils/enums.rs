@@ -16,7 +16,7 @@ pub enum StepMode128 {
 }
 
 impl StepMode128 {
-    pub fn to_byte(&self) -> u8 {
+    pub fn convert_to_bytes(&self) -> u8 {
         match self {
             StepMode128::Full => 0,
             StepMode128::M2 => 1,
@@ -71,7 +71,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn to_byte(&self) -> u8 {
+    pub fn convert_to_bytes(&self) -> u8 {
         match self {
             Direction::Forward => 0,
             Direction::Backward => 1,

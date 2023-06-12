@@ -281,8 +281,8 @@ impl CellSpinner {
                 .save_file()
                 .unwrap_or_default();
             let mut file = File::create(&self.path_config)?;
-            let protocol = &self.motor.get(tab).unwrap().protocol;
-            let json = serde_json::to_string_pretty(protocol).unwrap();
+            let protocol = self.motor.get(tab).unwrap().protocol;
+            let json = serde_json::to_string_pretty(&protocol).unwrap();
             file.write_all(json.as_bytes()).unwrap();
             let current_motor = self.motor.get(tab).unwrap().name.to_string();
             let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, Some(current_motor), 3, false);

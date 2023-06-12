@@ -8,15 +8,3 @@ pub struct Graph {
     pub agitation_points: Arc<Mutex<Vec<[f64; 2]>>>,
     pub agitation_thread_index: Arc<AtomicUsize>,
 }
-
-impl Graph {
-    pub fn new() -> Self {
-        Self {
-            rotation_points: Arc::new(Mutex::new(Vec::new())),
-            rotation_thread_index: Arc::new(Default::default()),
-            agitation_points: Arc::new(Mutex::new(Vec::new())),
-            agitation_thread_index: Arc::new(Default::default()),
-        }
-    }
-
-}
