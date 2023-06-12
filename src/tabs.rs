@@ -291,7 +291,7 @@ impl TabViewer for Tabs<'_> {
                                     // Duration for 1 direction cycle
                                     ui.label("Cycle duration:").on_hover_text("Duration of a cycle of rotations in one direction.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
                                             rotation_graph_needs_update = true;
                                         }
@@ -307,7 +307,7 @@ impl TabViewer for Tabs<'_> {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
                                             rotation_graph_needs_update = true;
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_cycle_duration().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_rotation_cycle_duration().convert_to_milliseconds();
                                             rotation_graph_needs_update = true;
                                         }
@@ -328,7 +328,7 @@ impl TabViewer for Tabs<'_> {
                                     // Pause before direction change
                                     ui.label("Pause:").on_hover_text("Pause before changing the direction of rotation.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -340,7 +340,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_rotation().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_rotation().convert_to_milliseconds();
                                         }
                                     });
@@ -348,7 +348,7 @@ impl TabViewer for Tabs<'_> {
                                     // Slider for rotation duration
                                     ui.label("Rotation duration:").on_hover_text("Duration of the rotation phase.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -360,7 +360,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_rotation_global_duration().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().rotation_duration_ms = self.durations.get(tab).unwrap().get_rotation_global_duration().convert_to_milliseconds();
                                         }
                                     });
@@ -368,7 +368,7 @@ impl TabViewer for Tabs<'_> {
                                     // Slider for pause before agitation
                                     ui.label("Pause pre-agitation:").on_hover_text("Pause before the agitation phase.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_days()).suffix(" d").clamp_range(0..=364)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -380,7 +380,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_pre_agitation().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_pre_agitation_ms = self.durations.get(tab).unwrap().get_pause_pre_agitation().convert_to_milliseconds();
                                         }
                                     });
@@ -435,7 +435,7 @@ impl TabViewer for Tabs<'_> {
                                     // Duration for 1 direction cycle
                                     ui.label("Cycle duration:").on_hover_text("Duration of a cycle of agitations in one direction.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_cycle_duration().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_cycle_duration().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_agitation_cycle_duration().convert_to_milliseconds();
                                             agitation_graph_needs_update = true;
                                         }
@@ -451,7 +451,7 @@ impl TabViewer for Tabs<'_> {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_agitation_cycle_duration().convert_to_milliseconds();
                                             agitation_graph_needs_update = true;
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_cycle_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_cycle_duration().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.duration_of_one_direction_cycle_ms = self.durations.get(tab).unwrap().get_agitation_cycle_duration().convert_to_milliseconds();
                                             agitation_graph_needs_update = true;
                                         }
@@ -472,7 +472,7 @@ impl TabViewer for Tabs<'_> {
                                     // Pause before direction change
                                     ui.label("Pause:").on_hover_text("Pause before changing the direction of agitation.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -484,7 +484,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_agitation().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_between_agitation().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation.pause_before_direction_change_ms = self.durations.get(tab).unwrap().get_pause_between_agitation().convert_to_milliseconds();
                                         }
                                     });
@@ -492,7 +492,7 @@ impl TabViewer for Tabs<'_> {
                                     // Slider for agitation duration
                                     ui.label("Agitation duration:").on_hover_text("Duration of the agitation phase.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms = self.durations.get(tab).unwrap().get_agitation_global_duration().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -504,7 +504,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms = self.durations.get(tab).unwrap().get_agitation_global_duration().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_agitation_global_duration().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().agitation_duration_ms = self.durations.get(tab).unwrap().get_agitation_global_duration().convert_to_milliseconds();
                                         }
                                     });
@@ -512,7 +512,7 @@ impl TabViewer for Tabs<'_> {
                                     // Slider for pause after agitation
                                     ui.label("Pause post-agitation:").on_hover_text("Pause after the agitation phase.");
                                     ui.horizontal(|ui| {
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -524,7 +524,7 @@ impl TabViewer for Tabs<'_> {
                                         if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
-                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                        if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_pause_post_agitation().get_mut_milliseconds()).suffix(" ms").speed(3.0).speed(3.0).clamp_range(0..=999)).changed() {
                                             self.motor.get_mut(tab).unwrap().get_protocol_mut().pause_post_agitation_ms = self.durations.get(tab).unwrap().get_pause_post_agitation().convert_to_milliseconds();
                                         }
                                     });
@@ -553,7 +553,7 @@ impl TabViewer for Tabs<'_> {
                                 let color = if self.motor.get(tab).unwrap().get_protocol().global_duration_ms == 0 { THEME.red } else { THEME.text };
                                 ui.label(RichText::new("Global duration:").color(color).size(15.0)).on_hover_text("Global duration of the protocol.");
                                 ui.horizontal(|ui| {
-                                    if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_days()).suffix(" d").clamp_range(0..=999)).changed() {
+                                    if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_days()).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                         self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms = self.durations.get(tab).unwrap().get_global_duration().convert_to_milliseconds();
                                     }
                                     if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_hours()).suffix(" h").clamp_range(0..=23)).changed() {
@@ -565,7 +565,7 @@ impl TabViewer for Tabs<'_> {
                                     if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_seconds()).suffix(" s").clamp_range(0..=59)).changed() {
                                         self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms = self.durations.get(tab).unwrap().get_global_duration().convert_to_milliseconds();
                                     }
-                                    if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_milliseconds()).suffix(" ms").clamp_range(0..=999)).changed() {
+                                    if ui.add(egui::DragValue::new(self.durations.get_mut(tab).unwrap().get_mut_global_duration().get_mut_milliseconds()).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                         self.motor.get_mut(tab).unwrap().get_protocol_mut().global_duration_ms = self.durations.get(tab).unwrap().get_global_duration().convert_to_milliseconds();
                                     }
                                 });
