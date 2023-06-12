@@ -215,7 +215,7 @@ impl TabViewer for Tabs<'_> {
                 // Display run time
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
                 let run_time = self.motor.get(tab).unwrap().timers_and_phases.lock().unwrap().get_elapsed_time_since_motor_start_as_millis();
-                let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().unwrap().stop_time_ms;
+                let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().unwrap().motor_stop_time_ms;
                 if run_time != 0 && is_stop_time.is_none() {
                     let run_time_days = run_time / (24 * 60 * 60 * 1000);
                     let run_time_hours = (run_time - run_time_days * (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);

@@ -95,8 +95,8 @@ impl Motor {
             return;
         }
         self.is_running.store(true, Ordering::Relaxed);
-        self.timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
-        self.timers_and_phases.lock().unwrap().stop_time_ms = None;
+        self.timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
+        self.timers_and_phases.lock().unwrap().motor_stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }

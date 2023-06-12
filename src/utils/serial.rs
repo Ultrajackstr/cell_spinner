@@ -104,7 +104,7 @@ impl Serial {
                                 StepperState::Finished => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::Finished;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::Finished;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
@@ -114,7 +114,7 @@ impl Serial {
                                 StepperState::EmergencyStop => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::EmergencyStop;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::EmergencyStop;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
@@ -124,7 +124,7 @@ impl Serial {
                                 StepperState::OpenLoad => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::OpenLoad;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::OpenLoad;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
@@ -134,7 +134,7 @@ impl Serial {
                                 StepperState::OverCurrent => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::OverCurrent;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::OverCurrent;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
@@ -144,7 +144,7 @@ impl Serial {
                                 StepperState::OverHeat => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::OverHeat;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::OverHeat;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
@@ -153,11 +153,11 @@ impl Serial {
                                 }
                                 StepperState::OscillationRotation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::OscillationRotation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationAgitation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::OscillationAgitation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartRotation => {
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::StartRotation;
@@ -165,11 +165,11 @@ impl Serial {
                                 }
                                 StepperState::StartPauseRotation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::StartPauseRotation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPausePreAgitation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::StartPausePreAgitation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartAgitation => {
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::StartAgitation;
@@ -177,16 +177,16 @@ impl Serial {
                                 }
                                 StepperState::StartPauseAgitation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::StartPauseAgitation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPausePostAgitation => {
                                     timers_and_phases.lock().unwrap().phase = StepperState::StartPausePostAgitation;
-                                    timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
+                                    timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
                                 }
                                 StepperState::StepgenAgitationError => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::StepgenAgitationError;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::StepgenAgitationError;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
@@ -196,7 +196,7 @@ impl Serial {
                                 StepperState::StepgenRotationError => {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().phase = StepperState::StepgenRotationError;
-                                    timers_and_phases.lock().unwrap().start_time = None;
+                                    timers_and_phases.lock().unwrap().motor_start_time = None;
                                     timers_and_phases.lock().unwrap().global_phase = StepperState::StepgenRotationError;
                                     timers_and_phases.lock().unwrap().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
