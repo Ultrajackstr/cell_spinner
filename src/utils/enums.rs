@@ -139,10 +139,10 @@ impl Display for StepperState {
         match self {
             StepperState::CommandReceived => write!(f, "Command received"),
             StepperState::Finished => write!(f, "Idle"),
-            StepperState::EmergencyStop => write!(f, "Emergency stop"),
-            StepperState::OpenLoad => write!(f, "Open load"),
-            StepperState::OverCurrent => write!(f, "Over current"),
-            StepperState::OverHeat => write!(f, "Over heat"),
+            StepperState::EmergencyStop => write!(f, "⚠️Emergency stop⚠️"),
+            StepperState::OpenLoad => write!(f, "⚠️Open load⚠️"),
+            StepperState::OverCurrent => write!(f, "⚠️Over current⚠️"),
+            StepperState::OverHeat => write!(f, "⚠️Over heat⚠️"),
             StepperState::OscillationRotation => write!(f, "Cycle"),
             StepperState::OscillationAgitation => write!(f, "Cycle"),
             StepperState::StartRotation => write!(f, "Rotation"),
@@ -151,9 +151,9 @@ impl Display for StepperState {
             StepperState::StartAgitation => write!(f, "Agitation"),
             StepperState::StartPauseAgitation => write!(f, "Pause agitation"),
             StepperState::StartPausePostAgitation => write!(f, "Pause post agitation"),
-            StepperState::StepgenRotationError => write!(f, "Error generating rotation steps"),
-            StepperState::StepgenAgitationError => write!(f, "Error generating agitation steps"),
-            StepperState::Invalid => write!(f, "Invalid"),
+            StepperState::StepgenRotationError => write!(f, "⚠️Error generating rotation steps⚠️"),
+            StepperState::StepgenAgitationError => write!(f, "⚠️Error generating agitation steps⚠️"),
+            StepperState::Invalid => write!(f, "⚠️Invalid⚠️"),
         }
     }
 }

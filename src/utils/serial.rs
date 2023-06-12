@@ -120,6 +120,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::EmergencyStop);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::EmergencyStop);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -128,6 +130,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::OpenLoad);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::OpenLoad);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -136,6 +140,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::OverCurrent);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::OverCurrent);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -144,6 +150,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::OverHeat);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::OverHeat);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -186,6 +194,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::StepgenAgitationError);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::StepgenAgitationError);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -194,6 +204,8 @@ impl Serial {
                                     timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().unwrap().set_phase(StepperState::StepgenRotationError);
                                     timers_and_phases.lock().unwrap().set_phase_start_time(None);
+                                    timers_and_phases.lock().unwrap().set_global_phase(StepperState::StepgenRotationError);
+                                    timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
