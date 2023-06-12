@@ -214,3 +214,76 @@ impl Durations {
         &self.global_duration
     }
 }
+
+#[derive(Default)]
+pub struct TimersAndPhases {
+    start_time: Option<Instant>,
+    stop_time_ms: Option<u64>,
+    phase: StepperState,
+    phase_start_time: Option<Instant>,
+    global_phase: StepperState,
+    global_phase_start_time: Option<Instant>,
+}
+
+impl TimersAndPhases {
+    pub fn set_start_time(&mut self, instant: Instant) {
+        self.start_time = Some(instant);
+    }
+
+    pub fn set_stop_time_ms(&mut self, stop_time: Option<u64>) {
+        self.stop_time_ms = stop_time;
+    }
+
+    pub fn set_phase(&mut self, phase: StepperState) {
+        self.phase = phase;
+    }
+
+    pub fn set_phase_start_time(&mut self, instant: Option<Instant>) {
+        self.phase_start_time = instant;
+    }
+
+    pub fn set_global_phase(&mut self, phase: StepperState) {
+        self.global_phase = phase;
+    }
+
+    pub fn set_global_phase_start_time(&mut self, instant: Option<Instant>) {
+        self.global_phase_start_time = instant;
+    }
+
+    pub fn get_elapsed_time_since_motor_start_as_millis(&self) -> u64 {
+        match self.start_time {
+            Some(start_time) => start_time.elapsed().as_millis() as u64,
+            None => 0,
+        }
+    }
+
+    pub fn get_elapsed_time_since_global_phase_start_as_millis(&self) -> u64 {
+        match self.global_phase_start_time {
+            Some(start_time) => start_time.elapsed().as_millis() as u64,
+            None => 0,
+        }
+    }
+
+    pub fn get_elapsed_time_since_phase_start_as_millis(&self) -> u64 {
+        match self.phase_start_time {
+            Some(start_time) => start_time.elapsed().as_millis() as u64,
+            None => 0,
+        }
+    }
+
+    pub fn get_global_phase_string(&self) -> String {
+        self.global_phase.to_string()
+    }
+
+    pub fn get_phase_string(&self) -> String {
+        self.phase.to_string()
+    }
+
+    pub fn get_stop_time_ms(&self) -> Option<u64> {
+        self.stop_time_ms
+    }
+
+    pub fn set_stop_time_motor_stopped(&mut self) {
+        self.stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis());
+    }
+}

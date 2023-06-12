@@ -138,7 +138,7 @@ impl Display for StepperState {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             StepperState::CommandReceived => write!(f, "Command received"),
-            StepperState::Finished => write!(f, "Finished"),
+            StepperState::Finished => write!(f, "Idle"),
             StepperState::EmergencyStop => write!(f, "Emergency stop"),
             StepperState::OpenLoad => write!(f, "Open load"),
             StepperState::OverCurrent => write!(f, "Over current"),

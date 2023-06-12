@@ -214,8 +214,8 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 // Display run time
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
-                let run_time = self.motor.get(tab).unwrap().get_elapsed_time_since_motor_start_as_millis();
-                let is_stop_time = self.motor.get(tab).unwrap().get_stop_time_ms();
+                let run_time = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_elapsed_time_since_motor_start_as_millis();
+                let is_stop_time = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_stop_time_ms();
                 if run_time != 0 && is_stop_time.is_none() {
                     let run_time_days = run_time / (24 * 60 * 60 * 1000);
                     let run_time_hours = (run_time - run_time_days * (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
@@ -574,10 +574,10 @@ impl TabViewer for Tabs<'_> {
                         ui.separator();
                         ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
                         ui.vertical_centered(|ui| {
-                            let global_current_phase = self.motor.get(tab).unwrap().get_global_phase();
-                            let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_since_global_phase_start_as_millis();
-                            let current_phase = self.motor.get(tab).unwrap().get_current_phase();
-                            let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_in_current_phase_as_millis();
+                            let global_current_phase = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_global_phase_string();
+                            let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_elapsed_time_since_global_phase_start_as_millis();
+                            let current_phase = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_phase_string();
+                            let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_timers_and_phases().lock().unwrap().get_elapsed_time_since_phase_start_as_millis();
                             egui::Grid::new("phases")
                                 .min_col_width(140.0)
                                 .show(ui, |ui| {
