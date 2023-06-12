@@ -79,12 +79,13 @@ impl Serial {
         }
     }
 
-    pub fn listen_to_serial_port(&self, motor_name: String, is_running: &Arc<AtomicBool>, protocol: &Protocol, current_phase: &Arc<Mutex<StepperState>>, start_phase_time: &Arc<Mutex<Option<Instant>>>, message_tx: Option<Sender<Message>>) {
+    pub fn listen_to_serial_port(&self, motor_name: String, is_running: &Arc<AtomicBool>, global_phase: &Arc<Mutex<StepperState>>, global_phase_start_time: &Arc<Mutex<Option<Instant>>>, current_phase: &Arc<Mutex<StepperState>>, start_phase_time: &Arc<Mutex<Option<Instant>>>, message_tx: Option<Sender<Message>>) {
         let port = self.port.clone();
         let is_running = is_running.clone();
         let current_phase = current_phase.clone();
         let start_phase_time = start_phase_time.clone();
-        let protocol = protocol.clone();
+        let global_phase = global_phase.clone();
+        let global_phase_start_time = global_phase_start_time.clone();
         thread::spawn(move || {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
@@ -144,48 +145,36 @@ impl Serial {
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OscillationRotation => {
-                                    // *current_phase.lock().unwrap() = StepperState::OscillationRotation;
-                                    // *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    *current_phase.lock().unwrap() = StepperState::OscillationRotation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::OscillationAgitation => {
-                                    // *current_phase.lock().unwrap() = StepperState::OscillationAgitation;
-                                    // *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    *current_phase.lock().unwrap() = StepperState::OscillationAgitation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartRotation => {
-                                    if protocol.rotation_duration_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartRotation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *global_phase.lock().unwrap() = StepperState::StartRotation;
+                                    *global_phase_start_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartPauseRotation => {
-                                    if protocol.rotation.pause_before_direction_change_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartPauseRotation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *current_phase.lock().unwrap() = StepperState::StartPauseRotation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartPausePreAgitation => {
-                                    if protocol.pause_pre_agitation_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartPausePreAgitation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *current_phase.lock().unwrap() = StepperState::StartPausePreAgitation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartAgitation => {
-                                    if protocol.agitation_duration_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartAgitation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *global_phase.lock().unwrap() = StepperState::StartAgitation;
+                                    *global_phase_start_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartPauseAgitation => {
-                                    if protocol.agitation.pause_before_direction_change_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartPauseAgitation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *current_phase.lock().unwrap() = StepperState::StartPauseAgitation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StartPausePostAgitation => {
-                                    if protocol.pause_post_agitation_ms != 0 {
-                                        *current_phase.lock().unwrap() = StepperState::StartPausePostAgitation;
-                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
-                                    }
+                                    *current_phase.lock().unwrap() = StepperState::StartPausePostAgitation;
+                                    *start_phase_time.lock().unwrap() = Some(Instant::now());
                                 }
                                 StepperState::StepgenAgitationError => {
                                     *current_phase.lock().unwrap() = StepperState::StepgenAgitationError;

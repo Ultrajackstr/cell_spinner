@@ -239,9 +239,9 @@ impl TabViewer for Tabs<'_> {
         });
         ui.separator();
         ////// SETUP //////
-        ui.add_enabled_ui(!is_running, |ui| {
-            egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
+            egui::ScrollArea::horizontal().id_source("setup").show(ui, |ui| {
                 ui.horizontal(|ui| {
+                    ui.add_enabled_ui(!is_running, |ui| {
                     // Setup rotation phase
                     let mut rotation_graph_needs_update = false;
                     ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
@@ -529,10 +529,12 @@ impl TabViewer for Tabs<'_> {
                             agitation_graph_needs_update = false;
                         }
                     });
-                    ui.separator();
-                    // Setup durations
-                    ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
-                        ui.vertical(|ui| {
+                });
+                ui.separator();
+                // Setup durations
+                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                    ui.vertical(|ui| {
+                        ui.add_enabled_ui(!is_running, |ui| {
                             ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
                             // Global duration of the protocol
@@ -557,40 +559,57 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                             });
-                            ui.separator();
-                            ui.vertical_centered(|ui| { //TODO: make it always enabled
-                                ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
-                                let current_phase = self.motor.get(tab).unwrap().get_current_phase();
-                                let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_in_current_phase_as_millis();
-                                if run_time_current_phase_ms != 0 {
-                                    let run_time_current_phase_days = run_time_current_phase_ms / 86400000;
-                                    let run_time_current_phase_hours = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000)) / 3600000;
-                                    let run_time_current_phase_minutes = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000)) / 60000;
-                                    let run_time_current_phase_seconds = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000)) / 1000;
-                                    let run_time_current_phase_milliseconds = run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000) - (run_time_current_phase_seconds * 1000);
-                                    ui.label(RichText::new(format!("{} - {} d {} h {} min {} s {} ms", current_phase, run_time_current_phase_days, run_time_current_phase_hours,
-                                                                   run_time_current_phase_minutes, run_time_current_phase_seconds, run_time_current_phase_milliseconds)).size(FONT_BUTTON_SIZE.font_large));
-                                } else {
-                                    ui.label(RichText::new(current_phase).size(FONT_BUTTON_SIZE.font_large));
-                                }
-                            });
-                            // Schematic of protocol
-                            // ui.vertical_centered(|ui| {
-                            //     ui.horizontal(|ui| {
-                            //         ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
-                            //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                            //         ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
-                            //     });
-                            //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                            //     ui.horizontal(|ui| {
-                            //         ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
-                            //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                            //         ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
-                            //     });
-                            //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                            //     ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
-                            // });
                         });
+                        ui.separator();
+                        ui.vertical_centered(|ui| {
+                            ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
+                            let global_current_phase = self.motor.get(tab).unwrap().get_global_phase();
+                            let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_since_global_phase_start_as_millis();
+                            let current_phase = self.motor.get(tab).unwrap().get_current_phase();
+                            let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_in_current_phase_as_millis();
+                            egui::Grid::new("phases")
+                                .show(ui, |ui| {
+                                    if run_time_global_current_phase_ms != 0 {
+                                        ui.label(RichText::new(global_current_phase).size(FONT_BUTTON_SIZE.font_large));
+                                        let run_time_global_current_phase_days = run_time_global_current_phase_ms / 86400000;
+                                        let run_time_global_current_phase_hours = (run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000)) / 3600000;
+                                        let run_time_global_current_phase_minutes = (run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000)) / 60000;
+                                        let run_time_global_current_phase_seconds = (run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000) - (run_time_global_current_phase_minutes * 60000)) / 1000;
+                                        let run_time_global_current_phase_milliseconds = run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000) - (run_time_global_current_phase_minutes * 60000) - (run_time_global_current_phase_seconds * 1000);
+                                        let run_time_global_current_phase = format!("{}d {}h {}min {}s {}ms", run_time_global_current_phase_days, run_time_global_current_phase_hours, run_time_global_current_phase_minutes, run_time_global_current_phase_seconds, run_time_global_current_phase_milliseconds);
+                                        ui.label(RichText::new(run_time_global_current_phase).size(FONT_BUTTON_SIZE.font_large));
+                                        ui.end_row();
+                                        if run_time_current_phase_ms != 0 {
+                                            ui.label(current_phase);
+                                            let run_time_current_phase_days = run_time_current_phase_ms / 86400000;
+                                            let run_time_current_phase_hours = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000)) / 3600000;
+                                            let run_time_current_phase_minutes = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000)) / 60000;
+                                            let run_time_current_phase_seconds = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000)) / 1000;
+                                            let run_time_current_phase_milliseconds = run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000) - (run_time_current_phase_seconds * 1000);
+                                            ui.label(RichText::new(format!("{} d {} h {} min {} s {} ms", run_time_current_phase_days, run_time_current_phase_hours,
+                                                                           run_time_current_phase_minutes, run_time_current_phase_seconds, run_time_current_phase_milliseconds)));
+                                        }
+                                    } else {
+                                        ui.label(RichText::new(current_phase).size(FONT_BUTTON_SIZE.font_large));
+                                    }
+                                });
+                        });
+                        // Schematic of protocol
+                        // ui.vertical_centered(|ui| {
+                        //     ui.horizontal(|ui| {
+                        //         ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
+                        //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                        //         ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
+                        //     });
+                        //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                        //     ui.horizontal(|ui| {
+                        //         ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
+                        //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                        //         ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
+                        //     });
+                        //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                        //     ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
+                        // });
                     });
                 });
             });

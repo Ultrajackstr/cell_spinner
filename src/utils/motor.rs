@@ -24,6 +24,8 @@ pub struct Motor {
     graph: Graph,
     pub phase: Arc<Mutex<StepperState>>,
     pub phase_start_time: Arc<Mutex<Option<Instant>>>,
+    pub global_phase: Arc<Mutex<StepperState>>,
+    pub global_phase_start_time: Arc<Mutex<Option<Instant>>>,
 }
 
 impl Default for Motor {
@@ -38,6 +40,8 @@ impl Default for Motor {
             graph: Graph::default(),
             phase: Arc::new(Mutex::new(StepperState::default())),
             phase_start_time: Arc::new(Mutex::new(None)),
+            global_phase: Arc::new(Mutex::new(Default::default())),
+            global_phase_start_time: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -55,6 +59,8 @@ impl Motor {
             graph: Graph::default(),
             phase: Arc::new(Mutex::new(StepperState::default())),
             phase_start_time: Arc::new(Mutex::new(None)),
+            global_phase: Arc::new(Mutex::new(Default::default())),
+            global_phase_start_time: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -130,7 +136,7 @@ impl Motor {
         self.is_running.store(true, Ordering::Relaxed);
         self.start_time = Some(Instant::now());
         self.stop_time_ms = None;
-        self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.protocol, &self.phase, &self.phase_start_time, message_tx);
+        self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.global_phase, &self.global_phase_start_time, &self.phase, &self.phase_start_time, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
 
@@ -140,6 +146,8 @@ impl Motor {
         self.stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis());
         self.phase_start_time = Arc::new(Mutex::new(None));
         self.phase = Arc::new(Mutex::new(StepperState::default()));
+        self.global_phase_start_time = Arc::new(Mutex::new(None));
+        self.global_phase = Arc::new(Mutex::new(Default::default()));
     }
 
     pub fn get_stop_time_ms(&self) -> Option<u64> {
@@ -164,6 +172,18 @@ impl Motor {
         } else {
             0
         }
+    }
+
+    pub fn get_elapsed_time_since_global_phase_start_as_millis(&self) -> u64 {
+        if let Some(start_time) = *self.global_phase_start_time.lock().unwrap() {
+            start_time.elapsed().as_millis() as u64
+        } else {
+            0
+        }
+    }
+
+    pub fn get_global_phase(&self) -> String {
+        self.global_phase.lock().unwrap().to_string()
     }
 
     pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {
