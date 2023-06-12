@@ -43,7 +43,7 @@ fugit = "0.3.7"
 catppuccin-egui = "3.0.0"
 dirs = "5.0.1"
 walkdir = "2.3.3"
-trash = "3.0.2"
+trash = "3.0.3"
 
 [profile.release]
 opt-level = 3
