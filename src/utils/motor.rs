@@ -16,12 +16,12 @@ use crate::utils::serial::Serial;
 use crate::utils::structs::{Message, TimersAndPhases};
 
 pub struct Motor {
-    name: String,
-    is_running: Arc<AtomicBool>,
-    protocol: Protocol,
-    serial: Serial,
-    graph: Graph,
-    timers_and_phases: Arc<Mutex<TimersAndPhases>>,
+    pub name: String,
+    pub is_running: Arc<AtomicBool>,
+    pub protocol: Protocol,
+    pub serial: Serial,
+    pub graph: Graph,
+    pub timers_and_phases: Arc<Mutex<TimersAndPhases>>,
 }
 
 impl Default for Motor {
@@ -52,53 +52,17 @@ impl Motor {
 
     pub fn new_with_protocol_and_graph(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol, graph: Graph) -> Result<Self, Error> {
         let mut motor = Self::new(serial_port, motor_name, already_connected_ports)?;
-        motor.set_protocol(protocol);
-        motor.set_graph(graph);
+        motor.protocol = protocol;
+        motor.graph = graph;
         Ok(motor)
-    }
-
-    pub fn get_serial(&self) -> &Serial {
-        &self.serial
     }
 
     pub fn get_is_connected(&self) -> bool {
         self.serial.get_is_connected()
     }
 
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn set_name(&mut self, name: &str) {
-        self.name = name.to_string();
-    }
-
-    pub fn get_name_mut(&mut self) -> &mut String {
-        &mut self.name
-    }
-
-    pub fn set_protocol(&mut self, protocol: Protocol) {
-        self.protocol = protocol;
-    }
-
-    pub fn get_protocol(&self) -> &Protocol {
-        &self.protocol
-    }
-
-    pub fn get_protocol_mut(&mut self) -> &mut Protocol {
-        &mut self.protocol
-    }
-
     pub fn get_is_running(&self) -> bool {
         self.is_running.load(Ordering::Relaxed)
-    }
-
-    pub fn get_graph(&self) -> &Graph {
-        &self.graph
-    }
-
-    pub fn set_graph(&mut self, graph: Graph) {
-        self.graph = graph;
     }
 
     pub fn disconnect(&mut self) {
@@ -131,7 +95,7 @@ impl Motor {
             return;
         }
         self.is_running.store(true, Ordering::Relaxed);
-        self.timers_and_phases.lock().unwrap().set_start_time(Instant::now());
+        self.timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
         self.timers_and_phases.lock().unwrap().set_stop_time_ms(None);
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
@@ -145,10 +109,6 @@ impl Motor {
         self.timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
         self.timers_and_phases.lock().unwrap().set_phase(StepperState::default());
         self.timers_and_phases.lock().unwrap().set_global_phase(StepperState::default());
-    }
-
-    pub fn get_timers_and_phases(&self) -> Arc<Mutex<TimersAndPhases>> {
-        self.timers_and_phases.clone()
     }
 
     pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {

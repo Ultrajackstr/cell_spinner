@@ -103,26 +103,6 @@ impl DurationHelper {
         self.milliseconds = milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000 - self.seconds * 1000;
     }
 
-    pub fn get_mut_days(&mut self) -> &mut u64 {
-        &mut self.days
-    }
-
-    pub fn get_mut_hours(&mut self) -> &mut u64 {
-        &mut self.hours
-    }
-
-    pub fn get_mut_minutes(&mut self) -> &mut u64 {
-        &mut self.minutes
-    }
-
-    pub fn get_mut_seconds(&mut self) -> &mut u64 {
-        &mut self.seconds
-    }
-
-    pub fn get_mut_milliseconds(&mut self) -> &mut u64 {
-        &mut self.milliseconds
-    }
-
     pub fn check_if_duration_is_greater_than_max_duration(&self) -> bool {
         self.convert_to_milliseconds() > MAX_DURATION_MS
     }
@@ -141,115 +121,18 @@ pub struct Durations {
     pub global_duration: DurationHelper,
 }
 
-impl Durations {
-    pub fn get_mut_rotation_cycle_duration(&mut self) -> &mut DurationHelper {
-        &mut self.duration_of_one_direction_cycle_rotation
-    }
-
-    pub fn get_mut_pause_between_rotation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_before_direction_change_rotation
-    }
-
-    pub fn get_mut_rotation_global_duration(&mut self) -> &mut DurationHelper {
-        &mut self.rotation_duration
-    }
-
-    pub fn get_mut_pause_pre_agitation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_pre_agitation
-    }
-
-    pub fn get_mut_agitation_cycle_duration(&mut self) -> &mut DurationHelper {
-        &mut self.duration_of_one_direction_cycle_agitation
-    }
-
-    pub fn get_mut_pause_between_agitation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_before_direction_change_agitation
-    }
-
-    pub fn get_mut_agitation_global_duration(&mut self) -> &mut DurationHelper {
-        &mut self.agitation_duration
-    }
-
-    pub fn get_mut_pause_post_agitation(&mut self) -> &mut DurationHelper {
-        &mut self.pause_post_agitation
-    }
-
-    pub fn get_mut_global_duration(&mut self) -> &mut DurationHelper {
-        &mut self.global_duration
-    }
-
-    pub fn get_rotation_cycle_duration(&self) -> &DurationHelper {
-        &self.duration_of_one_direction_cycle_rotation
-    }
-
-    pub fn get_pause_between_rotation(&self) -> &DurationHelper {
-        &self.pause_before_direction_change_rotation
-    }
-
-    pub fn get_rotation_global_duration(&self) -> &DurationHelper {
-        &self.rotation_duration
-    }
-
-    pub fn get_pause_pre_agitation(&self) -> &DurationHelper {
-        &self.pause_pre_agitation
-    }
-
-    pub fn get_agitation_cycle_duration(&self) -> &DurationHelper {
-        &self.duration_of_one_direction_cycle_agitation
-    }
-
-    pub fn get_pause_between_agitation(&self) -> &DurationHelper {
-        &self.pause_before_direction_change_agitation
-    }
-
-    pub fn get_pause_post_agitation(&self) -> &DurationHelper {
-        &self.pause_post_agitation
-    }
-
-    pub fn get_agitation_global_duration(&self) -> &DurationHelper {
-        &self.agitation_duration
-    }
-
-    pub fn get_global_duration(&self) -> &DurationHelper {
-        &self.global_duration
-    }
-}
 
 #[derive(Default)]
 pub struct TimersAndPhases {
-    start_time: Option<Instant>,
-    stop_time_ms: Option<u64>,
-    phase: StepperState,
-    phase_start_time: Option<Instant>,
-    global_phase: StepperState,
-    global_phase_start_time: Option<Instant>,
+    pub start_time: Option<Instant>,
+    pub stop_time_ms: Option<u64>,
+    pub phase: StepperState,
+    pub phase_start_time: Option<Instant>,
+    pub global_phase: StepperState,
+    pub global_phase_start_time: Option<Instant>,
 }
 
 impl TimersAndPhases {
-    pub fn set_start_time(&mut self, instant: Instant) {
-        self.start_time = Some(instant);
-    }
-
-    pub fn set_stop_time_ms(&mut self, stop_time: Option<u64>) {
-        self.stop_time_ms = stop_time;
-    }
-
-    pub fn set_phase(&mut self, phase: StepperState) {
-        self.phase = phase;
-    }
-
-    pub fn set_phase_start_time(&mut self, instant: Option<Instant>) {
-        self.phase_start_time = instant;
-    }
-
-    pub fn set_global_phase(&mut self, phase: StepperState) {
-        self.global_phase = phase;
-    }
-
-    pub fn set_global_phase_start_time(&mut self, instant: Option<Instant>) {
-        self.global_phase_start_time = instant;
-    }
-
     pub fn get_elapsed_time_since_motor_start_as_millis(&self) -> u64 {
         match self.start_time {
             Some(start_time) => start_time.elapsed().as_millis() as u64,
@@ -269,18 +152,6 @@ impl TimersAndPhases {
             Some(start_time) => start_time.elapsed().as_millis() as u64,
             None => 0,
         }
-    }
-
-    pub fn get_global_phase_string(&self) -> String {
-        self.global_phase.to_string()
-    }
-
-    pub fn get_phase_string(&self) -> String {
-        self.phase.to_string()
-    }
-
-    pub fn get_stop_time_ms(&self) -> Option<u64> {
-        self.stop_time_ms
     }
 
     pub fn set_stop_time_motor_stopped(&mut self) {

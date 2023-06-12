@@ -16,8 +16,8 @@ use crate::utils::structs::{Message, TimersAndPhases};
 
 #[derive(Default)]
 pub struct Serial {
-    port_name: String,
-    port: Arc<Mutex<Option<Box<dyn SerialPort>>>>,
+    pub port_name: String,
+    pub port: Arc<Mutex<Option<Box<dyn SerialPort>>>>,
 }
 
 impl Serial {
@@ -67,10 +67,6 @@ impl Serial {
 
     pub fn get_is_connected(&self) -> bool {
         self.port.lock().unwrap().is_some()
-    }
-
-    pub fn get_port_name(&self) -> &str {
-        &self.port_name
     }
 
     pub fn disconnect(&self) {

@@ -184,7 +184,7 @@ impl CellSpinner {
     fn init_tab(&mut self, tab: usize) {
         self.motor.insert(tab, Motor::default());
         self.durations.insert(tab, Durations::default());
-        self.motor.get_mut(&tab).unwrap().set_name(&format!("Motor {}", tab));
+        self.motor.get_mut(&tab).unwrap().name = format!("Motor {}", tab);
         self.motor_name.insert(tab, format!("Motor {}", tab));
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {
@@ -281,15 +281,16 @@ impl CellSpinner {
                 .save_file()
                 .unwrap_or_default();
             let mut file = File::create(&self.path_config)?;
-            let json = serde_json::to_string_pretty(self.motor.get(tab).unwrap().get_protocol()).unwrap();
+            let protocol = &self.motor.get(tab).unwrap().protocol;
+            let json = serde_json::to_string_pretty(protocol).unwrap();
             file.write_all(json.as_bytes()).unwrap();
-            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let current_motor = self.motor.get(tab).unwrap().name.to_string();
             let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, Some(current_motor), 3, false);
             self.message_handler(message);
             Ok(())
         };
         if let Err(err) = fn_export() {
-            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let current_motor = self.motor.get(tab).unwrap().name.to_string();
             let message: Message = Message::new(ToastKind::Error, "Error while exporting the configuration", Some(err), Some(current_motor), 3, false);
             self.message_handler(message);
         }
@@ -313,7 +314,7 @@ impl CellSpinner {
                 self.motor.iter_mut().for_each(|mut motor| match motor.import_protocol(protocol) {
                     Ok(_) => {}
                     Err(err) => {
-                        errors_import.push((motor.get_name().to_string(), err));
+                        errors_import.push((motor.name.to_string(), err));
                     }
                 });
                 if !errors_import.is_empty() {
@@ -327,19 +328,19 @@ impl CellSpinner {
                 }
                 self.durations.iter_mut().for_each(|mut durations| {
                     let key = *durations.key();
-                    durations.duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().rotation.pause_before_direction_change_ms);
-                    durations.duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().agitation.pause_before_direction_change_ms);
-                    let rotation_duration = self.motor.get(&key).unwrap().get_protocol().rotation_duration_ms;
-                    let agitation_duration = self.motor.get(&key).unwrap().get_protocol().agitation_duration_ms;
+                    durations.duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.pause_before_direction_change_ms);
+                    durations.duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.pause_before_direction_change_ms);
+                    let rotation_duration = self.motor.get(&key).unwrap().protocol.rotation_duration_ms;
+                    let agitation_duration = self.motor.get(&key).unwrap().protocol.agitation_duration_ms;
                     durations.rotation_duration.convert_from_milliseconds(rotation_duration);
                     durations.agitation_duration.convert_from_milliseconds(agitation_duration);
-                    let pause_pre_agitation = self.motor.get(&key).unwrap().get_protocol().pause_pre_agitation_ms;
-                    let pause_post_agitation = self.motor.get(&key).unwrap().get_protocol().pause_post_agitation_ms;
+                    let pause_pre_agitation = self.motor.get(&key).unwrap().protocol.pause_pre_agitation_ms;
+                    let pause_post_agitation = self.motor.get(&key).unwrap().protocol.pause_post_agitation_ms;
                     durations.pause_pre_agitation.convert_from_milliseconds(pause_pre_agitation);
                     durations.pause_post_agitation.convert_from_milliseconds(pause_post_agitation);
-                    durations.global_duration.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().global_duration_ms);
+                    durations.global_duration.convert_from_milliseconds(self.motor.get(&key).unwrap().protocol.global_duration_ms);
                 });
                 self.motor.iter().for_each(|motor| {
                     motor.generate_graph_rotation();
@@ -347,29 +348,29 @@ impl CellSpinner {
                 });
             } else {
                 self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
-                let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+                let current_motor = self.motor.get(tab).unwrap().name.to_string();
                 let message: Message = Message::new(ToastKind::Info, "Configuration imported!", None, Some(current_motor), 3, false);
                 self.message_handler(message);
-                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms);
-                self.durations.get_mut(tab).unwrap().pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().rotation.pause_before_direction_change_ms);
-                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().agitation.duration_of_one_direction_cycle_ms);
-                self.durations.get_mut(tab).unwrap().pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().agitation.pause_before_direction_change_ms);
-                let rotation_duration = self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms;
-                let agitation_duration = self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms;
+                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
+                self.durations.get_mut(tab).unwrap().pause_before_direction_change_rotation.convert_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.pause_before_direction_change_ms);
+                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
+                self.durations.get_mut(tab).unwrap().pause_before_direction_change_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.pause_before_direction_change_ms);
+                let rotation_duration = self.motor.get(tab).unwrap().protocol.rotation_duration_ms;
+                let agitation_duration = self.motor.get(tab).unwrap().protocol.agitation_duration_ms;
                 self.durations.get_mut(tab).unwrap().rotation_duration.convert_from_milliseconds(rotation_duration);
                 self.durations.get_mut(tab).unwrap().agitation_duration.convert_from_milliseconds(agitation_duration);
-                let pause_pre_agitation = self.motor.get(tab).unwrap().get_protocol().pause_pre_agitation_ms;
-                let pause_post_agitation = self.motor.get(tab).unwrap().get_protocol().pause_post_agitation_ms;
+                let pause_pre_agitation = self.motor.get(tab).unwrap().protocol.pause_pre_agitation_ms;
+                let pause_post_agitation = self.motor.get(tab).unwrap().protocol.pause_post_agitation_ms;
                 self.durations.get_mut(tab).unwrap().pause_pre_agitation.convert_from_milliseconds(pause_pre_agitation);
                 self.durations.get_mut(tab).unwrap().pause_post_agitation.convert_from_milliseconds(pause_post_agitation);
-                self.durations.get_mut(tab).unwrap().global_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().global_duration_ms);
+                self.durations.get_mut(tab).unwrap().global_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
                 self.motor.get(tab).unwrap().generate_graph_rotation();
                 self.motor.get(tab).unwrap().generate_graph_agitation();
             }
             Ok(())
         };
         if let Err(err) = fn_import() {
-            let current_motor = self.motor.get(tab).unwrap().get_name().to_string();
+            let current_motor = self.motor.get(tab).unwrap().name.to_string();
             let message: Message = Message::new(ToastKind::Error, "Error while importing the configuration", Some(err), Some(current_motor), 3, false);
             self.message_handler(message);
         }
