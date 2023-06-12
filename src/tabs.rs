@@ -7,7 +7,7 @@ use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
 
-use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THEME};
+use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_POINTS_GRAPHS, THEME};
 use crate::utils::enums::Direction;
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, Durations, Message};

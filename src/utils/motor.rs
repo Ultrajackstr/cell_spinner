@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
@@ -96,7 +96,7 @@ impl Motor {
         }
         self.is_running.store(true, Ordering::Relaxed);
         self.timers_and_phases.lock().unwrap().start_time = Some(Instant::now());
-        self.timers_and_phases.lock().unwrap().set_stop_time_ms(None);
+        self.timers_and_phases.lock().unwrap().stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
@@ -105,10 +105,10 @@ impl Motor {
         self.serial.send_bytes(vec![b'x']);
         self.is_running.store(false, Ordering::Relaxed);
         self.timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-        self.timers_and_phases.lock().unwrap().set_phase_start_time(None);
-        self.timers_and_phases.lock().unwrap().set_global_phase_start_time(None);
-        self.timers_and_phases.lock().unwrap().set_phase(StepperState::default());
-        self.timers_and_phases.lock().unwrap().set_global_phase(StepperState::default());
+        self.timers_and_phases.lock().unwrap().phase_start_time = None;
+        self.timers_and_phases.lock().unwrap().global_phase_start_time = None;
+        self.timers_and_phases.lock().unwrap().phase = StepperState::default();
+        self.timers_and_phases.lock().unwrap().global_phase = StepperState::default();
     }
 
     pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {
@@ -138,9 +138,9 @@ impl Motor {
     }
 
     pub fn generate_graph_rotation(&self) {
-        let points_rotation = self.graph.get_mutex_rotation_points();
+        let points_rotation = self.graph.rotation_points.clone();
         let rotation = self.protocol.rotation;
-        let index_thread = self.graph.get_rotation_thread_index();
+        let index_thread = self.graph.rotation_thread_index.clone();
         index_thread.fetch_add(1, Ordering::Relaxed);
         let index_thead_initial = index_thread.load(Ordering::Relaxed);
         // Rotation
@@ -176,9 +176,9 @@ impl Motor {
     }
 
     pub fn generate_graph_agitation(&self) {
-        let points_agitation = self.graph.get_mutex_agitation_points();
+        let points_agitation = self.graph.agitation_points.clone();
         let agitation = self.protocol.agitation;
-        let index_thread = self.graph.get_agitation_thread_index();
+        let index_thread = self.graph.agitation_thread_index.clone();
         index_thread.fetch_add(1, Ordering::Relaxed);
         let index_thead_initial = index_thread.load(Ordering::Relaxed);
         // Agitation

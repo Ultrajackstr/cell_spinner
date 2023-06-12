@@ -1,6 +1,5 @@
 use std::sync::mpsc::{Receiver, Sender};
-use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
