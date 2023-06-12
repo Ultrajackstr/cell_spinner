@@ -22,8 +22,8 @@ pub struct Motor {
     protocol: Protocol,
     serial: Serial,
     graph: Graph,
-    phase: StepperState,
-    phase_start_time: Instant,
+    pub phase: Arc<Mutex<StepperState>>,
+    pub phase_start_time: Arc<Mutex<Option<Instant>>>,
 }
 
 impl Default for Motor {
@@ -36,8 +36,8 @@ impl Default for Motor {
             protocol: Protocol::default(),
             serial: Serial::default(),
             graph: Graph::default(),
-            phase: StepperState::default(),
-            phase_start_time: Instant::now(),
+            phase: Arc::new(Mutex::new(StepperState::default())),
+            phase_start_time: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -53,8 +53,8 @@ impl Motor {
             protocol: Protocol::default(),
             serial,
             graph: Graph::default(),
-            phase: StepperState::default(),
-            phase_start_time: Instant::now(),
+            phase: Arc::new(Mutex::new(StepperState::default())),
+            phase_start_time: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -130,31 +130,32 @@ impl Motor {
         self.is_running.store(true, Ordering::Relaxed);
         self.start_time = Some(Instant::now());
         self.stop_time_ms = None;
-        self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, message_tx);
+        self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.protocol, &self.phase, &self.phase_start_time, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
 
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(vec![b'x']);
         self.is_running.store(false, Ordering::Relaxed);
-        self.stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis())
+        self.stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis());
+        self.phase_start_time = Arc::new(Mutex::new(None));
+        self.phase = Arc::new(Mutex::new(StepperState::default()));
     }
 
     pub fn get_stop_time_ms(&self) -> Option<u64> {
         self.stop_time_ms
     }
 
-    pub fn set_phase(&mut self, phase: StepperState) {
-        self.phase = phase;
-        self.phase_start_time = Instant::now();
-    }
-
     pub fn get_elapsed_time_in_current_phase_as_millis(&self) -> u64 {
-        self.phase_start_time.elapsed().as_millis() as u64
+        if let Some(start_time) = *self.phase_start_time.lock().unwrap() {
+            start_time.elapsed().as_millis() as u64
+        } else {
+            0
+        }
     }
 
     pub fn get_current_phase(&self) -> String {
-        self.phase.to_string()
+        self.phase.lock().unwrap().to_string()
     }
 
     pub fn get_elapsed_time_since_motor_start_as_millis(&self) -> u64 {

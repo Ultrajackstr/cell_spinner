@@ -558,6 +558,22 @@ impl TabViewer for Tabs<'_> {
                                 });
                             });
                             ui.separator();
+                            ui.vertical_centered(|ui| { //TODO: make it always enabled
+                                ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
+                                let current_phase = self.motor.get(tab).unwrap().get_current_phase();
+                                let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_in_current_phase_as_millis();
+                                if run_time_current_phase_ms != 0 {
+                                    let run_time_current_phase_days = run_time_current_phase_ms / 86400000;
+                                    let run_time_current_phase_hours = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000)) / 3600000;
+                                    let run_time_current_phase_minutes = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000)) / 60000;
+                                    let run_time_current_phase_seconds = (run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000)) / 1000;
+                                    let run_time_current_phase_milliseconds = run_time_current_phase_ms - (run_time_current_phase_days * 86400000) - (run_time_current_phase_hours * 3600000) - (run_time_current_phase_minutes * 60000) - (run_time_current_phase_seconds * 1000);
+                                    ui.label(RichText::new(format!("{} - {} d {} h {} min {} s {} ms", current_phase, run_time_current_phase_days, run_time_current_phase_hours,
+                                                                   run_time_current_phase_minutes, run_time_current_phase_seconds, run_time_current_phase_milliseconds)).size(FONT_BUTTON_SIZE.font_large));
+                                } else {
+                                    ui.label(RichText::new(current_phase).size(FONT_BUTTON_SIZE.font_large));
+                                }
+                            });
                             // Schematic of protocol
                             // ui.vertical_centered(|ui| {
                             //     ui.horizontal(|ui| {
@@ -574,30 +590,6 @@ impl TabViewer for Tabs<'_> {
                             //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
                             //     ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
                             // });
-                            ui.vertical_centered(|ui| {
-                                egui::Grid::new("schematic")
-                                    .show(ui, |ui| {
-                                        ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
-                                        ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.end_row();
-                                        ui.label("");
-                                        ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.label("");
-                                        ui.end_row();
-                                        ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
-                                        ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.end_row();
-                                        ui.label("");
-                                        ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                                        ui.label("");
-                                        ui.end_row();
-                                        ui.label("");
-                                        ui.label(RichText::new("Repeat").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Repeat for global duration.\nThis duration supersedes all other durations.");
-                                        ui.label("");
-                                    });
-                            });
                         });
                     });
                 });

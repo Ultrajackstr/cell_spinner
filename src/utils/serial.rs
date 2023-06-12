@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
@@ -11,6 +11,7 @@ use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBit
 
 use crate::app::THREAD_SLEEP;
 use crate::utils::enums::StepperState;
+use crate::utils::protocols::Protocol;
 use crate::utils::structs::Message;
 
 #[derive(Default)]
@@ -78,9 +79,12 @@ impl Serial {
         }
     }
 
-    pub fn listen_to_serial_port(&self, motor_name: String, is_running: &Arc<AtomicBool>, message_tx: Option<Sender<Message>>) {
+    pub fn listen_to_serial_port(&self, motor_name: String, is_running: &Arc<AtomicBool>, protocol: &Protocol, current_phase: &Arc<Mutex<StepperState>>, start_phase_time: &Arc<Mutex<Option<Instant>>>, message_tx: Option<Sender<Message>>) {
         let port = self.port.clone();
         let is_running = is_running.clone();
+        let current_phase = current_phase.clone();
+        let start_phase_time = start_phase_time.clone();
+        let protocol = protocol.clone();
         thread::spawn(move || {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
@@ -105,44 +109,94 @@ impl Serial {
                             match state {
                                 StepperState::CommandReceived => {}
                                 StepperState::Finished => {
+                                    *current_phase.lock().unwrap() = StepperState::Finished;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::EmergencyStop => {
+                                    *current_phase.lock().unwrap() = StepperState::EmergencyStop;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OpenLoad => {
+                                    *current_phase.lock().unwrap() = StepperState::OpenLoad;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverCurrent => {
+                                    *current_phase.lock().unwrap() = StepperState::OverCurrent;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverHeat => {
+                                    *current_phase.lock().unwrap() = StepperState::OverHeat;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
-                                StepperState::OscillationRotation => {}
-                                StepperState::OscillationAgitation => {}
-                                StepperState::StartRotation => {}
-                                StepperState::StartPauseRotation => {}
-                                StepperState::StartPausePreAgitation => {}
-                                StepperState::StartAgitation => {}
-                                StepperState::StartPauseAgitation => {}
-                                StepperState::StartPausePostAgitation => {}
+                                StepperState::OscillationRotation => {
+                                    // *current_phase.lock().unwrap() = StepperState::OscillationRotation;
+                                    // *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                }
+                                StepperState::OscillationAgitation => {
+                                    // *current_phase.lock().unwrap() = StepperState::OscillationAgitation;
+                                    // *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                }
+                                StepperState::StartRotation => {
+                                    if protocol.rotation_duration_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartRotation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
+                                StepperState::StartPauseRotation => {
+                                    if protocol.rotation.pause_before_direction_change_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartPauseRotation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
+                                StepperState::StartPausePreAgitation => {
+                                    if protocol.pause_pre_agitation_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartPausePreAgitation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
+                                StepperState::StartAgitation => {
+                                    if protocol.agitation_duration_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartAgitation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
+                                StepperState::StartPauseAgitation => {
+                                    if protocol.agitation.pause_before_direction_change_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartPauseAgitation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
+                                StepperState::StartPausePostAgitation => {
+                                    if protocol.pause_post_agitation_ms != 0 {
+                                        *current_phase.lock().unwrap() = StepperState::StartPausePostAgitation;
+                                        *start_phase_time.lock().unwrap() = Some(Instant::now());
+                                    }
+                                }
                                 StepperState::StepgenAgitationError => {
+                                    *current_phase.lock().unwrap() = StepperState::StepgenAgitationError;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::StepgenRotationError => {
+                                    *current_phase.lock().unwrap() = StepperState::StepgenRotationError;
+                                    *start_phase_time.lock().unwrap() = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
