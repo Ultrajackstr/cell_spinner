@@ -19,7 +19,7 @@ use crate::tabs::Tabs;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
 use crate::utils::protocols::Protocol;
-use crate::utils::structs::{Channels, Durations, FontAndButtonSize, Message, WindowsState};
+use crate::utils::structs::{Channels, CurrentPhase, Durations, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
@@ -66,6 +66,7 @@ pub struct CellSpinner {
     // Motor
     motor_name: DashMap<usize, String>,
     durations: DashMap<usize, Durations>,
+    current_phase: Arc<DashMap<usize, CurrentPhase>>,
     //Only to prevent loss of focus while changing the name...
     motor: Arc<DashMap<usize, Motor>>,
     // Tabs
@@ -106,6 +107,7 @@ impl Default for CellSpinner {
             motor_name: Default::default(),
             path_config: home_dir().unwrap(),
             durations: Default::default(),
+            current_phase: Arc::new(Default::default()),
         }
     }
 }
@@ -325,10 +327,6 @@ impl CellSpinner {
                     let message: Message = Message::new(ToastKind::Info, "Configuration imported for all stopped motors!", None, None, 3, false);
                     self.message_handler(message);
                 }
-                self.motor.iter().for_each(|motor| {
-                    motor.generate_graph_rotation();
-                    motor.generate_graph_agitation();
-                });
                 self.durations.iter_mut().for_each(|mut durations| {
                     let key = *durations.key();
                     durations.duration_of_one_direction_cycle_rotation.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().rotation.duration_of_one_direction_cycle_ms);
@@ -343,6 +341,11 @@ impl CellSpinner {
                     let pause_post_agitation = self.motor.get(&key).unwrap().get_protocol().pause_post_agitation_ms;
                     durations.pause_pre_agitation.convert_from_milliseconds(pause_pre_agitation);
                     durations.pause_post_agitation.convert_from_milliseconds(pause_post_agitation);
+                    durations.global_duration.convert_from_milliseconds(self.motor.get(&key).unwrap().get_protocol().global_duration_ms);
+                });
+                self.motor.iter().for_each(|motor| {
+                    motor.generate_graph_rotation();
+                    motor.generate_graph_agitation();
                 });
             } else {
                 self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
@@ -361,6 +364,7 @@ impl CellSpinner {
                 let pause_post_agitation = self.motor.get(tab).unwrap().get_protocol().pause_post_agitation_ms;
                 self.durations.get_mut(tab).unwrap().pause_pre_agitation.convert_from_milliseconds(pause_pre_agitation);
                 self.durations.get_mut(tab).unwrap().pause_post_agitation.convert_from_milliseconds(pause_post_agitation);
+                self.durations.get_mut(tab).unwrap().global_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().global_duration_ms);
                 self.motor.get(tab).unwrap().generate_graph_rotation();
                 self.motor.get(tab).unwrap().generate_graph_agitation();
             }

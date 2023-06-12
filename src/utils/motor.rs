@@ -8,6 +8,7 @@ use anyhow::{bail, Error};
 use fugit::TimerInstantU64;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THREAD_SLEEP};
+use crate::utils::enums::StepperState;
 use crate::utils::graph::Graph;
 use crate::utils::protocols::Protocol;
 use crate::utils::serial::Serial;
@@ -16,10 +17,13 @@ use crate::utils::structs::Message;
 pub struct Motor {
     name: String,
     is_running: Arc<AtomicBool>,
-    run_time_ms: Arc<Mutex<Duration>>,
+    start_time: Option<Instant>,
+    stop_time_ms: Option<u64>,
     protocol: Protocol,
     serial: Serial,
     graph: Graph,
+    phase: StepperState,
+    phase_start_time: Instant,
 }
 
 impl Default for Motor {
@@ -27,10 +31,13 @@ impl Default for Motor {
         Self {
             name: String::from(""),
             is_running: Arc::new(AtomicBool::new(false)),
-            run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
+            start_time: None,
+            stop_time_ms: None,
             protocol: Protocol::default(),
             serial: Serial::default(),
             graph: Graph::default(),
+            phase: StepperState::default(),
+            phase_start_time: Instant::now(),
         }
     }
 }
@@ -41,10 +48,13 @@ impl Motor {
         Ok(Self {
             name: motor_name,
             is_running: Arc::new(AtomicBool::new(false)),
-            run_time_ms: Arc::new(Mutex::new(Duration::from_millis(0))),
+            start_time: None,
+            stop_time_ms: None,
             protocol: Protocol::default(),
             serial,
             graph: Graph::default(),
+            phase: StepperState::default(),
+            phase_start_time: Instant::now(),
         })
     }
 
@@ -91,10 +101,6 @@ impl Motor {
         self.is_running.load(Ordering::Relaxed)
     }
 
-    pub fn get_run_time_ms(&self) -> Duration {
-        *self.run_time_ms.lock().unwrap()
-    }
-
     pub fn get_graph(&self) -> &Graph {
         &self.graph
     }
@@ -122,7 +128,8 @@ impl Motor {
             self.protocol.global_duration_ms = 0;
         }
         self.is_running.store(true, Ordering::Relaxed);
-        self.start_run_time();
+        self.start_time = Some(Instant::now());
+        self.stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
@@ -130,19 +137,32 @@ impl Motor {
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(vec![b'x']);
         self.is_running.store(false, Ordering::Relaxed);
+        self.stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis())
     }
 
-    pub fn start_run_time(&mut self) {
-        let is_running = self.is_running.clone();
-        let run_time_ms = self.run_time_ms.clone();
-        thread::spawn(move || {
-            let start_time = Instant::now();
-            while is_running.load(Ordering::Relaxed) {
-                let elapsed_time = start_time.elapsed();
-                *run_time_ms.lock().unwrap() = elapsed_time;
-                thread::sleep(Duration::from_millis(THREAD_SLEEP));
-            }
-        });
+    pub fn get_stop_time_ms(&self) -> Option<u64> {
+        self.stop_time_ms
+    }
+
+    pub fn set_phase(&mut self, phase: StepperState) {
+        self.phase = phase;
+        self.phase_start_time = Instant::now();
+    }
+
+    pub fn get_elapsed_time_in_current_phase_as_millis(&self) -> u64 {
+        self.phase_start_time.elapsed().as_millis() as u64
+    }
+
+    pub fn get_current_phase(&self) -> String {
+        self.phase.to_string()
+    }
+
+    pub fn get_elapsed_time_since_motor_start_as_millis(&self) -> u64 {
+        if let Some(start_time) = self.start_time {
+            start_time.elapsed().as_millis() as u64
+        } else {
+            0
+        }
     }
 
     pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {

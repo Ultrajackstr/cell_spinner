@@ -90,8 +90,8 @@ impl Display for Direction {
 
 #[derive(Debug, Default, Copy, Clone)]
 pub enum StepperState {
-    #[default]
     CommandReceived,
+    #[default]
     Finished,
     EmergencyStop,
     OpenLoad,
@@ -145,12 +145,12 @@ impl Display for StepperState {
             StepperState::OverHeat => write!(f, "Over heat"),
             StepperState::OscillationRotation => write!(f, "Oscillation rotation"),
             StepperState::OscillationAgitation => write!(f, "Oscillation agitation"),
-            StepperState::StartRotation => write!(f, "Start rotation"),
-            StepperState::StartPauseRotation => write!(f, "Start pause rotation"),
-            StepperState::StartPausePreAgitation => write!(f, "Start pause pre agitation"),
-            StepperState::StartAgitation => write!(f, "Start agitation"),
-            StepperState::StartPauseAgitation => write!(f, "Start pause agitation"),
-            StepperState::StartPausePostAgitation => write!(f, "Start pause post agitation"),
+            StepperState::StartRotation => write!(f, "Rotation"),
+            StepperState::StartPauseRotation => write!(f, "Pause rotation"),
+            StepperState::StartPausePreAgitation => write!(f, "Pause pre agitation"),
+            StepperState::StartAgitation => write!(f, "Agitation"),
+            StepperState::StartPauseAgitation => write!(f, "Pause agitation"),
+            StepperState::StartPausePostAgitation => write!(f, "Pause post agitation"),
             StepperState::StepgenRotationError => write!(f, "Error generating rotation steps"),
             StepperState::StepgenAgitationError => write!(f, "Error generating agitation steps"),
             StepperState::Invalid => write!(f, "Invalid"),

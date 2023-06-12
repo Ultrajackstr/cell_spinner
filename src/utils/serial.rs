@@ -129,16 +129,8 @@ impl Serial {
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
-                                StepperState::OscillationRotation => {
-                                    //todo
-                                    // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
-                                    // message_tx.as_ref().unwrap().send(message).unwrap();
-                                }
-                                StepperState::OscillationAgitation => {
-                                    //todo
-                                    // let message: Message = Message::new(ToastKind::Info, &message, None, origin, 2, false);
-                                    // message_tx.as_ref().unwrap().send(message).unwrap();
-                                }
+                                StepperState::OscillationRotation => {}
+                                StepperState::OscillationAgitation => {}
                                 StepperState::StartRotation => {}
                                 StepperState::StartPauseRotation => {}
                                 StepperState::StartPausePreAgitation => {}

@@ -203,19 +203,38 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 // Display run time
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
-                let run_time = self.motor.get(tab).unwrap().get_run_time_ms().as_millis();
-                let run_time_days = run_time / (24 * 60 * 60 * 1000);
-                let run_time_hours = (run_time - run_time_days * (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
-                let run_time_minutes = (run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000)) / (60 * 1000);
-                let run_time_seconds = (run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000)) / 1000;
-                let run_time_milliseconds = run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000) - run_time_seconds * 1000;
-                // Run time text.
-                ui.label(RichText::new("Run time:").monospace());
-                ui.label(format!("{} d", run_time_days));
-                ui.label(format!("{} h", run_time_hours));
-                ui.label(format!("{} m", run_time_minutes));
-                ui.label(format!("{} s", run_time_seconds));
-                ui.label(format!("{} ms", run_time_milliseconds));
+                let run_time = self.motor.get(tab).unwrap().get_elapsed_time_since_motor_start_as_millis();
+                let is_stop_time = self.motor.get(tab).unwrap().get_stop_time_ms();
+                if run_time != 0 && is_stop_time.is_none() {
+                    let run_time_days = run_time / (24 * 60 * 60 * 1000);
+                    let run_time_hours = (run_time - run_time_days * (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
+                    let run_time_minutes = (run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000)) / (60 * 1000);
+                    let run_time_seconds = (run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000)) / 1000;
+                    let run_time_milliseconds = run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000) - run_time_seconds * 1000;
+                    // Run time text.
+                    ui.label(RichText::new("Current run time:").size(15.0).strong().underline());
+                    ui.label(format!("{} d", run_time_days));
+                    ui.label(format!("{} h", run_time_hours));
+                    ui.label(format!("{} m", run_time_minutes));
+                    ui.label(format!("{} s", run_time_seconds));
+                    ui.label(format!("{} ms", run_time_milliseconds));
+                } else if is_stop_time.is_some() {
+                    let stop_time_ms = is_stop_time.unwrap();
+                    let stop_time_days = stop_time_ms / (24 * 60 * 60 * 1000);
+                    let stop_time_hours = (stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000)) / (60 * 60 * 1000);
+                    let stop_time_minutes = (stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000) - stop_time_hours * (60 * 60 * 1000)) / (60 * 1000);
+                    let stop_time_seconds = (stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000) - stop_time_hours * (60 * 60 * 1000) - stop_time_minutes * (60 * 1000)) / 1000;
+                    let stop_time_milliseconds = stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000) - stop_time_hours * (60 * 60 * 1000) - stop_time_minutes * (60 * 1000) - stop_time_seconds * 1000;
+                    // Run time text.
+                    ui.label(RichText::new("Last session duration:").size(15.0).strong().underline());
+                    ui.label(format!("{} d", stop_time_days));
+                    ui.label(format!("{} h", stop_time_hours));
+                    ui.label(format!("{} m", stop_time_minutes));
+                    ui.label(format!("{} s", stop_time_seconds));
+                    ui.label(format!("{} ms", stop_time_milliseconds));
+                } else {
+                    ui.label(RichText::new("Run time: None").size(15.0).strong().underline());
+                }
             });
         });
         ui.separator();
@@ -286,7 +305,7 @@ impl TabViewer for Tabs<'_> {
                                     // Direction
                                     let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
                                     let selected_direction = self.motor.get(tab).unwrap().get_protocol().rotation.direction;
-                                    ui.label("Direction:").on_hover_text("Initial direction");
+                                    ui.label("Initial direction:");
                                     egui::ComboBox::from_id_source("direction_rotation")
                                         .selected_text(selected_direction.to_string())
                                         .show_ui(ui, |ui| {
@@ -430,7 +449,7 @@ impl TabViewer for Tabs<'_> {
                                     // Direction
                                     let directions: [Direction; 2] = [Direction::Forward, Direction::Backward];
                                     let selected_direction = self.motor.get(tab).unwrap().get_protocol().agitation.direction;
-                                    ui.label("Direction:").on_hover_text("Initial direction.");
+                                    ui.label("Initial direction:");
                                     egui::ComboBox::from_id_source("direction_agitation")
                                         .selected_text(selected_direction.to_string())
                                         .show_ui(ui, |ui| {
@@ -540,20 +559,44 @@ impl TabViewer for Tabs<'_> {
                             });
                             ui.separator();
                             // Schematic of protocol
+                            // ui.vertical_centered(|ui| {
+                            //     ui.horizontal(|ui| {
+                            //         ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
+                            //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                            //         ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
+                            //     });
+                            //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                            //     ui.horizontal(|ui| {
+                            //         ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
+                            //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                            //         ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
+                            //     });
+                            //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                            //     ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
+                            // });
                             ui.vertical_centered(|ui| {
-                                ui.horizontal(|ui| {
-                                    ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
-                                    ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                                    ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
-                                });
-                                ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                                ui.horizontal(|ui| {
-                                    ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
-                                    ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                                    ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
-                                });
-                                ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                                ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
+                                egui::Grid::new("schematic")
+                                    .show(ui, |ui| {
+                                        ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
+                                        ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.end_row();
+                                        ui.label("");
+                                        ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label("");
+                                        ui.end_row();
+                                        ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
+                                        ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.end_row();
+                                        ui.label("");
+                                        ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label("");
+                                        ui.end_row();
+                                        ui.label("");
+                                        ui.label(RichText::new("Repeat").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Repeat for global duration.\nThis duration supersedes all other durations.");
+                                        ui.label("");
+                                    });
                             });
                         });
                     });
