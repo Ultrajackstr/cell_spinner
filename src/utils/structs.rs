@@ -214,33 +214,3 @@ impl Durations {
         &self.global_duration
     }
 }
-
-pub struct CurrentPhase {
-    phase: StepperState,
-    phase_start_time: Instant,
-}
-
-impl Default for CurrentPhase {
-    fn default() -> Self {
-        Self {
-            phase: StepperState::Finished,
-            phase_start_time: Instant::now(),
-        }
-    }
-}
-
-impl CurrentPhase {
-    pub fn set_phase(&mut self, phase: StepperState) {
-        self.phase = phase;
-        self.phase_start_time = Instant::now();
-    }
-
-    pub fn get_elapsed_time_as_millis(&self) -> u64 {
-        self.phase_start_time.elapsed().as_millis() as u64
-    }
-
-    pub fn get_current_phase(&self) -> String {
-        self.phase.to_string()
-    }
-}
-

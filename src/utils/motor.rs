@@ -4,7 +4,8 @@ use std::sync::mpsc::Sender;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use anyhow::{bail, Error};
+use anyhow::{anyhow, bail, Error};
+use egui_toast::ToastKind;
 use fugit::TimerInstantU64;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS, THREAD_SLEEP};
@@ -124,14 +125,25 @@ impl Motor {
         let min_rotation_duration = self.protocol.rotation.get_min_duration();
         let min_agitation_duration = self.protocol.agitation.get_min_duration();
         if min_rotation_duration == 0 {
-            self.protocol.rotation_duration_ms = min_rotation_duration;
+            self.protocol.rotation_duration_ms = 0;
         }
         if min_agitation_duration == 0 {
-            self.protocol.agitation_duration_ms = min_agitation_duration;
+            self.protocol.agitation_duration_ms = 0;
+        }
+        if self.protocol.rotation_duration_ms == 0 {
+            self.protocol.pause_pre_agitation_ms = 0;
+        }
+        if self.protocol.agitation_duration_ms == 0 {
+            self.protocol.pause_post_agitation_ms = 0;
         }
         let duration_without_pause = self.protocol.get_duration_without_pause();
         if duration_without_pause == 0 {
             self.protocol.global_duration_ms = 0;
+            let message = Message::new(ToastKind::Error, "The duration of the protocol is 0. Please check the durations.", Some(anyhow!("0 duration")), Some(self.name.clone()), 3, false);
+            if let Some(message_tx) = message_tx {
+                message_tx.send(message).unwrap();
+            }
+            return;
         }
         self.is_running.store(true, Ordering::Relaxed);
         self.start_time = Some(Instant::now());

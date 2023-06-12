@@ -19,7 +19,7 @@ use crate::tabs::Tabs;
 use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
 use crate::utils::protocols::Protocol;
-use crate::utils::structs::{Channels, CurrentPhase, Durations, FontAndButtonSize, Message, WindowsState};
+use crate::utils::structs::{Channels, Durations, FontAndButtonSize, Message, WindowsState};
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
@@ -66,7 +66,6 @@ pub struct CellSpinner {
     // Motor
     motor_name: DashMap<usize, String>,
     durations: DashMap<usize, Durations>,
-    current_phase: Arc<DashMap<usize, CurrentPhase>>,
     //Only to prevent loss of focus while changing the name...
     motor: Arc<DashMap<usize, Motor>>,
     // Tabs
@@ -107,7 +106,6 @@ impl Default for CellSpinner {
             motor_name: Default::default(),
             path_config: home_dir().unwrap(),
             durations: Default::default(),
-            current_phase: Arc::new(Default::default()),
         }
     }
 }

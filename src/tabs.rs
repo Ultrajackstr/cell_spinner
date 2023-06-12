@@ -165,11 +165,22 @@ impl TabViewer for Tabs<'_> {
                             .on_hover_text("Right click to start all motors");
                         if run_response.clicked() {
                             self.motor.get_mut(tab).unwrap().start_motor(self.channels.message_tx.clone());
+                            self.durations.get_mut(tab).unwrap().rotation_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().rotation_duration_ms);
+                            self.durations.get_mut(tab).unwrap().agitation_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().agitation_duration_ms);
+                            self.durations.get_mut(tab).unwrap().pause_pre_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().pause_pre_agitation_ms);
+                            self.durations.get_mut(tab).unwrap().pause_post_agitation.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().pause_post_agitation_ms);
+                            self.durations.get_mut(tab).unwrap().global_duration.convert_from_milliseconds(self.motor.get(tab).unwrap().get_protocol().global_duration_ms);
                         } else if run_response.secondary_clicked() {
                             // Start all the connected motors that are not running
                             self.motor.iter_mut().for_each(|mut motor| {
                                 if motor.get_is_connected() && !motor.get_is_running() {
                                     motor.start_motor(self.channels.message_tx.clone());
+                                    let tab = *motor.key();
+                                    self.durations.get_mut(&tab).unwrap().rotation_duration.convert_from_milliseconds(motor.get_protocol().rotation_duration_ms);
+                                    self.durations.get_mut(&tab).unwrap().agitation_duration.convert_from_milliseconds(motor.get_protocol().agitation_duration_ms);
+                                    self.durations.get_mut(&tab).unwrap().pause_pre_agitation.convert_from_milliseconds(motor.get_protocol().pause_pre_agitation_ms);
+                                    self.durations.get_mut(&tab).unwrap().pause_post_agitation.convert_from_milliseconds(motor.get_protocol().pause_post_agitation_ms);
+                                    self.durations.get_mut(&tab).unwrap().global_duration.convert_from_milliseconds(motor.get_protocol().global_duration_ms);
                                 }
                             });
                         }
@@ -212,12 +223,12 @@ impl TabViewer for Tabs<'_> {
                     let run_time_seconds = (run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000)) / 1000;
                     let run_time_milliseconds = run_time - run_time_days * (24 * 60 * 60 * 1000) - run_time_hours * (60 * 60 * 1000) - run_time_minutes * (60 * 1000) - run_time_seconds * 1000;
                     // Run time text.
-                    ui.label(RichText::new("Current run time:").size(15.0).strong().underline());
-                    ui.label(format!("{} d", run_time_days));
-                    ui.label(format!("{} h", run_time_hours));
-                    ui.label(format!("{} m", run_time_minutes));
-                    ui.label(format!("{} s", run_time_seconds));
-                    ui.label(format!("{} ms", run_time_milliseconds));
+                    ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} d", run_time_days)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} h", run_time_hours)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} min", run_time_minutes)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} s", run_time_seconds)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} ms", run_time_milliseconds)).size(FONT_BUTTON_SIZE.font_large));
                 } else if is_stop_time.is_some() {
                     let stop_time_ms = is_stop_time.unwrap();
                     let stop_time_days = stop_time_ms / (24 * 60 * 60 * 1000);
@@ -226,22 +237,22 @@ impl TabViewer for Tabs<'_> {
                     let stop_time_seconds = (stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000) - stop_time_hours * (60 * 60 * 1000) - stop_time_minutes * (60 * 1000)) / 1000;
                     let stop_time_milliseconds = stop_time_ms - stop_time_days * (24 * 60 * 60 * 1000) - stop_time_hours * (60 * 60 * 1000) - stop_time_minutes * (60 * 1000) - stop_time_seconds * 1000;
                     // Run time text.
-                    ui.label(RichText::new("Last session duration:").size(15.0).strong().underline());
-                    ui.label(format!("{} d", stop_time_days));
-                    ui.label(format!("{} h", stop_time_hours));
-                    ui.label(format!("{} m", stop_time_minutes));
-                    ui.label(format!("{} s", stop_time_seconds));
-                    ui.label(format!("{} ms", stop_time_milliseconds));
+                    ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} d", stop_time_days)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} h", stop_time_hours)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} min", stop_time_minutes)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} s", stop_time_seconds)).size(FONT_BUTTON_SIZE.font_large));
+                    ui.label(RichText::new(format!("{} ms", stop_time_milliseconds)).size(FONT_BUTTON_SIZE.font_large));
                 } else {
-                    ui.label(RichText::new("Run time: None").size(15.0).strong().underline());
+                    ui.label(RichText::new("Run time ➡️ None").size(FONT_BUTTON_SIZE.font_large));
                 }
             });
         });
         ui.separator();
         ////// SETUP //////
-            egui::ScrollArea::horizontal().id_source("setup").show(ui, |ui| {
-                ui.horizontal(|ui| {
-                    ui.add_enabled_ui(!is_running, |ui| {
+        egui::ScrollArea::horizontal().id_source("setup").show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_enabled_ui(!is_running, |ui| {
                     // Setup rotation phase
                     let mut rotation_graph_needs_update = false;
                     ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
@@ -561,13 +572,14 @@ impl TabViewer for Tabs<'_> {
                             });
                         });
                         ui.separator();
+                        ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
                         ui.vertical_centered(|ui| {
-                            ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
                             let global_current_phase = self.motor.get(tab).unwrap().get_global_phase();
                             let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_since_global_phase_start_as_millis();
                             let current_phase = self.motor.get(tab).unwrap().get_current_phase();
                             let run_time_current_phase_ms = self.motor.get(tab).unwrap().get_elapsed_time_in_current_phase_as_millis();
                             egui::Grid::new("phases")
+                                .min_col_width(140.0)
                                 .show(ui, |ui| {
                                     if run_time_global_current_phase_ms != 0 {
                                         ui.label(RichText::new(global_current_phase).size(FONT_BUTTON_SIZE.font_large));
@@ -576,7 +588,7 @@ impl TabViewer for Tabs<'_> {
                                         let run_time_global_current_phase_minutes = (run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000)) / 60000;
                                         let run_time_global_current_phase_seconds = (run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000) - (run_time_global_current_phase_minutes * 60000)) / 1000;
                                         let run_time_global_current_phase_milliseconds = run_time_global_current_phase_ms - (run_time_global_current_phase_days * 86400000) - (run_time_global_current_phase_hours * 3600000) - (run_time_global_current_phase_minutes * 60000) - (run_time_global_current_phase_seconds * 1000);
-                                        let run_time_global_current_phase = format!("{}d {}h {}min {}s {}ms", run_time_global_current_phase_days, run_time_global_current_phase_hours, run_time_global_current_phase_minutes, run_time_global_current_phase_seconds, run_time_global_current_phase_milliseconds);
+                                        let run_time_global_current_phase = format!("{} d {} h {} min {} s {} ms", run_time_global_current_phase_days, run_time_global_current_phase_hours, run_time_global_current_phase_minutes, run_time_global_current_phase_seconds, run_time_global_current_phase_milliseconds);
                                         ui.label(RichText::new(run_time_global_current_phase).size(FONT_BUTTON_SIZE.font_large));
                                         ui.end_row();
                                         if run_time_current_phase_ms != 0 {
