@@ -143,7 +143,6 @@ impl CellSpinner {
         self.channels.message_tx = Some(message_tx);
         self.channels.message_rx = Some(message_rx);
         self.init_tab(1);
-        self.added_tabs.push(1);
         self.is_first_frame = false;
     }
 
@@ -182,6 +181,7 @@ impl CellSpinner {
 
     /// Init tab
     fn init_tab(&mut self, tab: usize) {
+        self.added_tabs.push(tab);
         self.motor.insert(tab, Motor::default());
         self.durations.insert(tab, Durations::default());
         self.motor.get_mut(&tab).unwrap().name = format!("Motor {}", tab);
