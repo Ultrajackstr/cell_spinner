@@ -44,7 +44,7 @@ impl Tabs<'_> {
     fn remove_tab(&mut self, tab: usize) {
         self.already_connected_ports.lock().unwrap().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
         self.motor.get_mut(&tab).unwrap().disconnect();
-        self.selected_port.get_mut(&tab).unwrap().clear();
+        self.selected_port.remove(&tab);
         self.promise_serial_connect.remove(&tab);
         self.motor_name.remove(&tab);
         self.motor.remove(&tab);

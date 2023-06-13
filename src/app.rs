@@ -64,9 +64,9 @@ pub struct CellSpinner {
     available_ports: Vec<String>,
     already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
+    //Only to prevent loss of focus while changing the name of the motor...
     motor_name: DashMap<usize, String>,
     durations: DashMap<usize, Durations>,
-    //Only to prevent loss of focus while changing the name...
     motor: Arc<DashMap<usize, Motor>>,
     // Tabs
     current_tab_counter: usize,
