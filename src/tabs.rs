@@ -278,15 +278,21 @@ impl TabViewer for Tabs<'_> {
                                     let modes = self.motor.get(tab).unwrap().protocol.rotation.step_mode.get_modes();
                                     let selected_mode = self.motor.get(tab).unwrap().protocol.rotation.step_mode;
                                     ui.label("Step mode:");
-                                    egui::ComboBox::from_id_source("step_mode_rotation")
-                                        .selected_text(selected_mode.to_string())
-                                        .show_ui(ui, |ui| {
-                                            for mode in modes {
-                                                if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().protocol.rotation.step_mode, mode, mode.to_string()).changed() {
-                                                    rotation_graph_needs_update = true;
+                                    ui.horizontal(|ui| {
+                                        egui::ComboBox::from_id_source("step_mode_rotation")
+                                            .selected_text(selected_mode.to_string())
+                                            .show_ui(ui, |ui| {
+                                                for mode in modes {
+                                                    if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().protocol.rotation.step_mode, mode, mode.to_string()).changed() {
+                                                        rotation_graph_needs_update = true;
+                                                    }
                                                 }
-                                            }
-                                        });
+                                            });
+                                        ui.separator();
+                                        ui.label(format!("Rev: {:.2}", self.motor.get(tab).unwrap().get_revolutions_per_rotation_cycle()))
+                                            .on_hover_text("Number of revolutions per rotation cycle.");
+                                    });
+
                                     ui.end_row();
                                     // Duration for 1 direction cycle
                                     ui.label("Cycle duration:").on_hover_text("Duration of a cycle of rotations in one direction.");
@@ -422,15 +428,21 @@ impl TabViewer for Tabs<'_> {
                                     let modes = self.motor.get(tab).unwrap().protocol.agitation.step_mode.get_modes();
                                     let selected_mode = self.motor.get(tab).unwrap().protocol.agitation.step_mode;
                                     ui.label("Step mode:");
-                                    egui::ComboBox::from_id_source("step_mode_agitation")
-                                        .selected_text(selected_mode.to_string())
-                                        .show_ui(ui, |ui| {
-                                            for mode in modes {
-                                                if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().protocol.agitation.step_mode, mode, mode.to_string()).changed() {
-                                                    agitation_graph_needs_update = true;
+                                    ui.horizontal(|ui| {
+                                        egui::ComboBox::from_id_source("step_mode_agitation")
+                                            .selected_text(selected_mode.to_string())
+                                            .show_ui(ui, |ui| {
+                                                for mode in modes {
+                                                    if ui.selectable_value(&mut self.motor.get_mut(tab).unwrap().protocol.agitation.step_mode, mode, mode.to_string()).changed() {
+                                                        agitation_graph_needs_update = true;
+                                                    }
                                                 }
-                                            }
-                                        });
+                                            });
+                                        ui.separator();
+                                        ui.label(format!("Rev: {:.2}", self.motor.get(tab).unwrap().get_revolutions_per_agitation_cycle()))
+                                            .on_hover_text("Number of revolutions per agitation cycle.");
+                                    });
+
                                     ui.end_row();
                                     // Duration for 1 direction cycle
                                     ui.label("Cycle duration:").on_hover_text("Duration of a cycle of agitations in one direction.");

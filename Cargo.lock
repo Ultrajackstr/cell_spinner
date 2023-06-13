@@ -2331,7 +2331,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stepgen_new"
 version = "0.3.0"
-source = "git+ssh://git@github.com/Ultrajackstr/stepgen_new.git?branch=time#13337c9482147deaa69d45c490a93a7a123f082c"
+source = "git+ssh://git@github.com/Ultrajackstr/stepgen_new.git?branch=time#4211f4ff6b0d36c023fdca29d726fbac32019508"
 dependencies = [
  "fixed",
  "fixed-macro",

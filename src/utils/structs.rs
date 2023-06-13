@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 use std::sync::mpsc::{Receiver, Sender};
 use std::time::Instant;
 
@@ -147,4 +149,10 @@ impl TimersAndPhases {
     pub fn set_stop_time_motor_stopped(&mut self) {
         self.motor_stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis());
     }
+}
+
+#[derive(Default)]
+pub struct StepsCycle {
+    pub steps_per_direction_cycle_rotation: Arc<AtomicU64>,
+    pub steps_per_direction_cycle_agitation: Arc<AtomicU64>,
 }
