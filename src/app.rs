@@ -434,10 +434,12 @@ impl eframe::App for CellSpinner {
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
                     egui::ScrollArea::horizontal().id_source("Top_scroll_area").show(ui, |ui| {
-                        let mut tab = 1;
+                        let tab;
                         if let Some(active_tab) = self.tree.find_active_focused() {
                             tab = *active_tab.1;
-                        };
+                        } else {
+                            tab = self.added_tabs[0];
+                        }
                         let is_running = self.motor.get(&tab).unwrap().get_is_running();
                         // Title
                         let response_heading = ui.add(egui::Label::new(RichText::new("Cell Spinner").heading())
