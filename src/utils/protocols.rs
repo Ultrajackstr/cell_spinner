@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use stepgen_new::x64::Stepgen;
 
 use crate::app::{BYTES, MAX_RPM};
 use crate::utils::enums::{Direction, StepMode128};
@@ -50,8 +51,8 @@ impl Rotation {
     pub fn create_stepgen(&self) -> stepgen_new::x64::Stepgen<1_000_000> {
         let target_rpm = self.rpm * self.step_mode.get_multiplier();
         let target_accel = self.acceleration * self.step_mode.get_multiplier();
-        stepgen_new::x64::Stepgen::new(target_rpm, target_accel,
-                                       self.steps_for_one_direction_cycle, self.duration_of_one_direction_cycle_ms).unwrap()
+        Stepgen::new(target_rpm, target_accel,
+                     self.steps_for_one_direction_cycle, self.duration_of_one_direction_cycle_ms).unwrap()
     }
 
 
@@ -60,10 +61,10 @@ impl Rotation {
         let mut bytes = [0u8; 34];
         bytes[0..4].copy_from_slice(&self.rpm.to_le_bytes());
         bytes[4..8].copy_from_slice(&self.acceleration.to_le_bytes());
-        bytes[8..9].copy_from_slice(&self.step_mode.convert_to_bytes().to_le_bytes());
+        bytes[8..9].copy_from_slice(self.step_mode.convert_to_bytes_slice());
         bytes[9..17].copy_from_slice(&self.duration_of_one_direction_cycle_ms.to_le_bytes());
         bytes[17..25].copy_from_slice(&self.steps_for_one_direction_cycle.to_le_bytes());
-        bytes[25..26].copy_from_slice(&self.direction.convert_to_bytes().to_le_bytes());
+        bytes[25..26].copy_from_slice(self.direction.convert_to_byte_slice());
         bytes[26..34].copy_from_slice(&self.pause_before_direction_change_ms.to_le_bytes());
         bytes
     }
@@ -87,7 +88,7 @@ impl Protocol {
     }
 
     /// Protocol to bytes for serial communication
-    pub fn bytes_vec_to_send(&self) -> Vec<u8> {
+    pub fn protocol_as_bytes(&self) -> [u8; BYTES] {
         let mut bytes = [0u8; BYTES];
         bytes[0] = b'a';
         bytes[1..35].copy_from_slice(&self.rotation.convert_to_bytes());
@@ -98,6 +99,6 @@ impl Protocol {
         bytes[93..101].copy_from_slice(&self.pause_post_agitation_ms.to_le_bytes());
         bytes[101..109].copy_from_slice(&self.global_duration_ms.to_le_bytes());
         bytes[109] = b'z';
-        bytes.to_vec()
+        bytes
     }
 }

@@ -34,7 +34,7 @@ impl Default for Motor {
             protocol: Protocol::default(),
             serial: Serial::default(),
             graph: Graph::default(),
-            timers_and_phases: Arc::new(Mutex::new(Default::default())),
+            timers_and_phases: Arc::new(Mutex::new(TimersAndPhases::default())),
             steps_per_cycle: StepsCycle::default(),
         }
     }
@@ -49,7 +49,7 @@ impl Motor {
             protocol: Protocol::default(),
             serial,
             graph: Graph::default(),
-            timers_and_phases: Arc::new(Mutex::new(Default::default())),
+            timers_and_phases: Arc::new(Mutex::new(TimersAndPhases::default())),
             steps_per_cycle: StepsCycle::default(),
         })
     }
@@ -102,11 +102,11 @@ impl Motor {
         self.timers_and_phases.lock().motor_start_time = Some(Instant::now());
         self.timers_and_phases.lock().motor_stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
-        self.serial.send_bytes(self.protocol.bytes_vec_to_send());
+        self.serial.send_bytes(&self.protocol.protocol_as_bytes());
     }
 
     pub fn stop_motor(&mut self) {
-        self.serial.send_bytes(vec![b'x']);
+        self.serial.send_bytes(&[b'x']);
         self.is_running.store(false, Ordering::Relaxed);
         self.timers_and_phases.lock().set_stop_time_motor_stopped();
         self.timers_and_phases.lock().phase_start_time = None;
@@ -160,16 +160,16 @@ impl Motor {
         thread::spawn(move || {
             points_rotation.lock().clear();
             let mut stepgen = rotation.create_stepgen();
-            let mut delay_acc_us = 0;
+            let mut delay_acc_ms = 0;
             let mut rpm_for_graph = 0.0;
             let mut current_time = 0.0;
             let mut last_rpm = 0.0;
             let now = |prev_delay: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
-            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_ms))) {
                 let is_max_points = points_rotation.lock().len() > MAX_POINTS_GRAPHS;
-                current_time = delay_acc_us as f64 * 0.001;
+                current_time = delay_acc_ms as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
@@ -180,7 +180,7 @@ impl Motor {
                 } else if (current_time as u64) % 100_000 == 0 && !is_max_points {
                     points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
-                delay_acc_us += delay;
+                delay_acc_ms += delay;
                 steps_rotation.store(stepgen.get_current_step(), Ordering::Relaxed);
             }
             points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
@@ -198,16 +198,16 @@ impl Motor {
         thread::spawn(move || {
             points_agitation.lock().clear();
             let mut stepgen = agitation.create_stepgen();
-            let mut delay_acc_us = 0;
+            let mut delay_acc_ms = 0;
             let mut rpm_for_graph = 0.0;
             let mut current_time = 0.0;
             let mut last_rpm = 0.0;
             let now = |prev_delay: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
-            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
+            while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_ms))) {
                 let is_max_points = points_agitation.lock().len() > MAX_POINTS_GRAPHS;
-                current_time = delay_acc_us as f64 * 0.001;
+                current_time = delay_acc_ms as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / agitation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
@@ -218,7 +218,7 @@ impl Motor {
                 } else if (current_time as u64) % 100_000 == 0 && !is_max_points {
                     points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
-                delay_acc_us += delay;
+                delay_acc_ms += delay;
                 steps_agitation.store(stepgen.get_current_step(), Ordering::Relaxed);
             }
             points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);

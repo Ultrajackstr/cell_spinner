@@ -194,7 +194,7 @@ impl CellSpinner {
                 available_ports
             }
             Err(err) => {
-                let error = Error::new(err);
+                let error = anyhow!(err);
                 self.message_handler(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Motor {}", tab)), 3, false));
                 vec!["".to_string()]
             }
@@ -329,19 +329,19 @@ impl CellSpinner {
                 }
                 self.durations.iter_mut().for_each(|mut durations| {
                     let key = *durations.key();
-                    durations.duration_of_one_direction_cycle_rotation.from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_rotation.from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.pause_before_direction_change_ms);
-                    durations.duration_of_one_direction_cycle_agitation.from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
-                    durations.pause_before_direction_change_agitation.from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.pause_before_direction_change_ms);
+                    durations.duration_of_one_direction_cycle_rotation.self_from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_rotation.self_from_milliseconds(self.motor.get(&key).unwrap().protocol.rotation.pause_before_direction_change_ms);
+                    durations.duration_of_one_direction_cycle_agitation.self_from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
+                    durations.pause_before_direction_change_agitation.self_from_milliseconds(self.motor.get(&key).unwrap().protocol.agitation.pause_before_direction_change_ms);
                     let rotation_duration = self.motor.get(&key).unwrap().protocol.rotation_duration_ms;
                     let agitation_duration = self.motor.get(&key).unwrap().protocol.agitation_duration_ms;
-                    durations.rotation_duration.from_milliseconds(rotation_duration);
-                    durations.agitation_duration.from_milliseconds(agitation_duration);
+                    durations.rotation_duration.self_from_milliseconds(rotation_duration);
+                    durations.agitation_duration.self_from_milliseconds(agitation_duration);
                     let pause_pre_agitation = self.motor.get(&key).unwrap().protocol.pause_pre_agitation_ms;
                     let pause_post_agitation = self.motor.get(&key).unwrap().protocol.pause_post_agitation_ms;
-                    durations.pause_pre_agitation.from_milliseconds(pause_pre_agitation);
-                    durations.pause_post_agitation.from_milliseconds(pause_post_agitation);
-                    durations.global_duration.from_milliseconds(self.motor.get(&key).unwrap().protocol.global_duration_ms);
+                    durations.pause_pre_agitation.self_from_milliseconds(pause_pre_agitation);
+                    durations.pause_post_agitation.self_from_milliseconds(pause_post_agitation);
+                    durations.global_duration.self_from_milliseconds(self.motor.get(&key).unwrap().protocol.global_duration_ms);
                 });
                 self.motor.iter().for_each(|motor| {
                     motor.generate_graph_rotation();
@@ -352,19 +352,19 @@ impl CellSpinner {
                 let current_motor = self.motor.get(tab).unwrap().name.to_string();
                 let message: Message = Message::new(ToastKind::Info, "Configuration imported!", None, Some(current_motor), 3, false);
                 self.message_handler(message);
-                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_rotation.from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
-                self.durations.get_mut(tab).unwrap().pause_before_direction_change_rotation.from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.pause_before_direction_change_ms);
-                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_agitation.from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
-                self.durations.get_mut(tab).unwrap().pause_before_direction_change_agitation.from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.pause_before_direction_change_ms);
+                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_rotation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
+                self.durations.get_mut(tab).unwrap().pause_before_direction_change_rotation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.pause_before_direction_change_ms);
+                self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_agitation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.duration_of_one_direction_cycle_ms);
+                self.durations.get_mut(tab).unwrap().pause_before_direction_change_agitation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation.pause_before_direction_change_ms);
                 let rotation_duration = self.motor.get(tab).unwrap().protocol.rotation_duration_ms;
                 let agitation_duration = self.motor.get(tab).unwrap().protocol.agitation_duration_ms;
-                self.durations.get_mut(tab).unwrap().rotation_duration.from_milliseconds(rotation_duration);
-                self.durations.get_mut(tab).unwrap().agitation_duration.from_milliseconds(agitation_duration);
+                self.durations.get_mut(tab).unwrap().rotation_duration.self_from_milliseconds(rotation_duration);
+                self.durations.get_mut(tab).unwrap().agitation_duration.self_from_milliseconds(agitation_duration);
                 let pause_pre_agitation = self.motor.get(tab).unwrap().protocol.pause_pre_agitation_ms;
                 let pause_post_agitation = self.motor.get(tab).unwrap().protocol.pause_post_agitation_ms;
-                self.durations.get_mut(tab).unwrap().pause_pre_agitation.from_milliseconds(pause_pre_agitation);
-                self.durations.get_mut(tab).unwrap().pause_post_agitation.from_milliseconds(pause_post_agitation);
-                self.durations.get_mut(tab).unwrap().global_duration.from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
+                self.durations.get_mut(tab).unwrap().pause_pre_agitation.self_from_milliseconds(pause_pre_agitation);
+                self.durations.get_mut(tab).unwrap().pause_post_agitation.self_from_milliseconds(pause_post_agitation);
+                self.durations.get_mut(tab).unwrap().global_duration.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
                 self.motor.get(tab).unwrap().generate_graph_rotation();
                 self.motor.get(tab).unwrap().generate_graph_agitation();
             }

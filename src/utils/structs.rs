@@ -16,18 +16,6 @@ pub struct FontAndButtonSize {
     pub button_default: egui::Vec2,
 }
 
-impl Default for FontAndButtonSize {
-    fn default() -> Self {
-        Self {
-            font_table: 14.0,
-            font_default: 16.0,
-            font_large: 20.0,
-            button_top_panel: egui::Vec2::new(100.0, 30.0),
-            button_default: egui::Vec2::new(100.0, 30.0),
-        }
-    }
-}
-
 pub struct Message {
     pub kind: ToastKind,
     pub message: String,
@@ -35,19 +23,6 @@ pub struct Message {
     pub origin: Option<String>,
     pub duration: u64,
     pub is_waiting: bool,
-}
-
-impl Default for Message {
-    fn default() -> Self {
-        Self {
-            kind: ToastKind::Info,
-            message: String::new(),
-            error: None,
-            origin: None,
-            duration: 0,
-            is_waiting: false,
-        }
-    }
 }
 
 impl Message {
@@ -91,7 +66,7 @@ impl DurationHelper {
         self.days * 24 * 60 * 60 * 1000 + self.hours * 60 * 60 * 1000 + self.minutes * 60 * 1000 + self.seconds * 1000 + self.milliseconds
     }
 
-    pub fn from_milliseconds(&mut self, milliseconds: u64) {
+    pub fn self_from_milliseconds(&mut self, milliseconds: u64) {
         self.days = milliseconds / (24 * 60 * 60 * 1000);
         self.hours = (milliseconds - self.days * 24 * 60 * 60 * 1000) / (60 * 60 * 1000);
         self.minutes = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000) / (60 * 1000);
@@ -101,7 +76,7 @@ impl DurationHelper {
 
     pub fn new_from_milliseconds(milliseconds: u64) -> Self {
         let mut duration_helper = Self::default();
-        duration_helper.from_milliseconds(milliseconds);
+        duration_helper.self_from_milliseconds(milliseconds);
         duration_helper
     }
 }

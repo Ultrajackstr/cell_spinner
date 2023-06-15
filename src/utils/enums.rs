@@ -16,16 +16,16 @@ pub enum StepMode128 {
 }
 
 impl StepMode128 {
-    pub fn convert_to_bytes(&self) -> u8 {
+    pub fn convert_to_bytes_slice(&self) -> &[u8] {
         match self {
-            StepMode128::Full => 0,
-            StepMode128::M2 => 1,
-            StepMode128::M4 => 2,
-            StepMode128::M8 => 3,
-            StepMode128::M16 => 4,
-            StepMode128::M32 => 5,
-            StepMode128::M64 => 6,
-            StepMode128::M128 => 7,
+            StepMode128::Full => &[0],
+            StepMode128::M2 => &[1],
+            StepMode128::M4 => &[2],
+            StepMode128::M8 => &[3],
+            StepMode128::M16 => &[4],
+            StepMode128::M32 => &[5],
+            StepMode128::M64 => &[6],
+            StepMode128::M128 => &[7],
         }
     }
 
@@ -71,10 +71,10 @@ pub enum Direction {
 }
 
 impl Direction {
-    pub fn convert_to_bytes(&self) -> u8 {
+    pub fn convert_to_byte_slice(&self) -> &[u8] {
         match self {
-            Direction::Forward => 0,
-            Direction::Backward => 1,
+            Direction::Forward => &[0],
+            Direction::Backward => &[1],
         }
     }
 }

@@ -84,7 +84,7 @@ impl Tabs<'_> {
                 available_ports
             }
             Err(err) => {
-                let error = anyhow::Error::new(err);
+                let error = anyhow::anyhow!(err);
                 self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while listing serial ports", Some(error), Some(format!("Motor {}", tab)), 3, false)).ok();
                 vec!["".to_string()]
             }
@@ -166,22 +166,22 @@ impl TabViewer for Tabs<'_> {
                             .on_hover_text("Right click to start all motors");
                         if run_response.clicked() {
                             self.motor.get_mut(tab).unwrap().start_motor(self.channels.message_tx.clone());
-                            self.durations.get_mut(tab).unwrap().rotation_duration.from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation_duration_ms);
-                            self.durations.get_mut(tab).unwrap().agitation_duration.from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation_duration_ms);
-                            self.durations.get_mut(tab).unwrap().pause_pre_agitation.from_milliseconds(self.motor.get(tab).unwrap().protocol.pause_pre_agitation_ms);
-                            self.durations.get_mut(tab).unwrap().pause_post_agitation.from_milliseconds(self.motor.get(tab).unwrap().protocol.pause_post_agitation_ms);
-                            self.durations.get_mut(tab).unwrap().global_duration.from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
+                            self.durations.get_mut(tab).unwrap().rotation_duration.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation_duration_ms);
+                            self.durations.get_mut(tab).unwrap().agitation_duration.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.agitation_duration_ms);
+                            self.durations.get_mut(tab).unwrap().pause_pre_agitation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.pause_pre_agitation_ms);
+                            self.durations.get_mut(tab).unwrap().pause_post_agitation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.pause_post_agitation_ms);
+                            self.durations.get_mut(tab).unwrap().global_duration.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
                         } else if run_response.secondary_clicked() {
                             // Start all the connected motors that are not running
                             self.motor.iter_mut().for_each(|mut motor| {
                                 if motor.get_is_connected() && !motor.get_is_running() {
                                     motor.start_motor(self.channels.message_tx.clone());
                                     let tab = *motor.key();
-                                    self.durations.get_mut(&tab).unwrap().rotation_duration.from_milliseconds(motor.protocol.rotation_duration_ms);
-                                    self.durations.get_mut(&tab).unwrap().agitation_duration.from_milliseconds(motor.protocol.agitation_duration_ms);
-                                    self.durations.get_mut(&tab).unwrap().pause_pre_agitation.from_milliseconds(motor.protocol.pause_pre_agitation_ms);
-                                    self.durations.get_mut(&tab).unwrap().pause_post_agitation.from_milliseconds(motor.protocol.pause_post_agitation_ms);
-                                    self.durations.get_mut(&tab).unwrap().global_duration.from_milliseconds(motor.protocol.global_duration_ms);
+                                    self.durations.get_mut(&tab).unwrap().rotation_duration.self_from_milliseconds(motor.protocol.rotation_duration_ms);
+                                    self.durations.get_mut(&tab).unwrap().agitation_duration.self_from_milliseconds(motor.protocol.agitation_duration_ms);
+                                    self.durations.get_mut(&tab).unwrap().pause_pre_agitation.self_from_milliseconds(motor.protocol.pause_pre_agitation_ms);
+                                    self.durations.get_mut(&tab).unwrap().pause_post_agitation.self_from_milliseconds(motor.protocol.pause_post_agitation_ms);
+                                    self.durations.get_mut(&tab).unwrap().global_duration.self_from_milliseconds(motor.protocol.global_duration_ms);
                                 }
                             });
                         }
