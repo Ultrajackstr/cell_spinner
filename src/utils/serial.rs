@@ -106,7 +106,7 @@ impl Serial {
                                 StepperState::CommandReceived => {}
                                 StepperState::StepgenAgitationError | StepperState::StepgenRotationError | StepperState::EmergencyStop | StepperState::OpenLoad
                                 | StepperState::OverHeat | StepperState::OverCurrent => {
-                                    let error = Some(anyhow!("Received: \"{}\" {:?}", String::from_utf8(buf.to_vec()).unwrap(), &buf));
+                                    let error = Some(anyhow!("Motor stopped !"));
                                     timers_and_phases.lock().set_stop_time_motor_stopped();
                                     timers_and_phases.lock().phase = state;
                                     timers_and_phases.lock().phase_start_time = None;
