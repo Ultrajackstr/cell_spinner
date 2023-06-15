@@ -11,7 +11,8 @@ use dirs::home_dir;
 use egui::{FontFamily, Style, Visuals};
 use walkdir::WalkDir;
 
-pub const APP_NAME: &str = "cell_spinner";
+const APP_NAME: &str = "cell_spinner";
+const ICON: &[u8] = include_bytes!("resources/icon.png");
 
 fn load_icon(data: &[u8]) -> eframe::IconData {
     let (icon_rgba, icon_width, icon_height) = {
@@ -82,8 +83,6 @@ fn main() -> eframe::Result<()> {
     log_panics::init();
 
     // tracing_subscriber::fmt().init();
-
-    const ICON: &[u8] = include_bytes!("resources/icon.png");
 
     let native_options = eframe::NativeOptions {
         resizable: true,

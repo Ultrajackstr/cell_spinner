@@ -48,7 +48,7 @@ impl Rotation {
     }
 
 
-    pub fn create_stepgen(&self) -> stepgen_new::x64::Stepgen<1_000_000> {
+    pub fn create_stepgen(&self) -> Stepgen<1_000_000> {
         let target_rpm = self.rpm * self.step_mode.get_multiplier();
         let target_accel = self.acceleration * self.step_mode.get_multiplier();
         Stepgen::new(target_rpm, target_accel,
