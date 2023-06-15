@@ -35,7 +35,6 @@ pub const MAX_ACCELERATION: u32 = 20_000;
 pub const MAX_RPM: u32 = 5_000;
 // 1 year in milliseconds
 pub const MAX_DURATION_MS: u64 = 365 * 24 * 60 * 60 * 1000;
-// 1 year in milliseconds
 pub const MAX_POINTS_GRAPHS: usize = 250_000;
 pub const BYTES: usize = 110;
 pub const THEME: Theme = Theme {
