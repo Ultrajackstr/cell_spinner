@@ -87,16 +87,22 @@ pub struct DurationHelper {
 }
 
 impl DurationHelper {
-    pub fn convert_to_milliseconds(&self) -> u64 {
+    pub fn to_milliseconds(&self) -> u64 {
         self.days * 24 * 60 * 60 * 1000 + self.hours * 60 * 60 * 1000 + self.minutes * 60 * 1000 + self.seconds * 1000 + self.milliseconds
     }
 
-    pub fn convert_from_milliseconds(&mut self, milliseconds: u64) {
+    pub fn from_milliseconds(&mut self, milliseconds: u64) {
         self.days = milliseconds / (24 * 60 * 60 * 1000);
         self.hours = (milliseconds - self.days * 24 * 60 * 60 * 1000) / (60 * 60 * 1000);
         self.minutes = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000) / (60 * 1000);
         self.seconds = (milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000) / 1000;
         self.milliseconds = milliseconds - self.days * 24 * 60 * 60 * 1000 - self.hours * 60 * 60 * 1000 - self.minutes * 60 * 1000 - self.seconds * 1000;
+    }
+
+    pub fn new_from_milliseconds(milliseconds: u64) -> Self {
+        let mut duration_helper = Self::default();
+        duration_helper.from_milliseconds(milliseconds);
+        duration_helper
     }
 }
 

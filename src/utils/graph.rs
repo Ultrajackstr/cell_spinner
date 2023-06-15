@@ -1,5 +1,6 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
+use parking_lot::Mutex;
 
 #[derive(Debug, Default, Clone)]
 pub struct Graph {

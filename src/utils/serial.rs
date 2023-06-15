@@ -1,5 +1,5 @@
 use std::io::Read;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
+use parking_lot::Mutex;
 use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
 
 use crate::app::THREAD_SLEEP;
@@ -23,7 +24,7 @@ impl Serial {
     pub fn new(port_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let port = Self::connect_to_serial_port(port_name)?;
         let port = Arc::new(port);
-        already_connected_ports.lock().unwrap().push(port_name.into());
+        already_connected_ports.lock().push(port_name.into());
         Ok(Self {
             port_name: port_name.into(),
             port,
@@ -65,11 +66,11 @@ impl Serial {
     }
 
     pub fn get_is_connected(&self) -> bool {
-        self.port.lock().unwrap().is_some()
+        self.port.lock().is_some()
     }
 
     pub fn disconnect(&self) {
-        if let Some(mut port) = self.port.lock().unwrap().take() {
+        if let Some(mut port) = self.port.lock().take() {
             port.write_all(b"bye!").ok();
         }
     }
@@ -82,7 +83,7 @@ impl Serial {
             while is_running.load(std::sync::atomic::Ordering::Relaxed) {
                 let mut buf: [u8; 3];
                 // Check if there is a byte to read
-                let is_byte = match port.lock().unwrap().as_mut().unwrap().bytes_to_read() {
+                let is_byte = match port.lock().as_mut().unwrap().bytes_to_read() {
                     Ok(n) => n,
                     Err(err) => {
                         let error = Some(Error::new(err));
@@ -93,7 +94,7 @@ impl Serial {
                 };
                 if is_byte != 0 {
                     buf = [0u8; 3];
-                    match port.lock().unwrap().as_mut().unwrap().read_exact(&mut buf) {
+                    match port.lock().as_mut().unwrap().read_exact(&mut buf) {
                         Ok(_) => {
                             let state: StepperState = StepperState::from(&buf);
                             let origin = Some(motor_name.clone());
@@ -102,109 +103,109 @@ impl Serial {
                             match state {
                                 StepperState::CommandReceived => {}
                                 StepperState::Finished => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::Finished;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::Finished;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::Finished;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::Finished;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::EmergencyStop => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::EmergencyStop;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::EmergencyStop;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::EmergencyStop;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::EmergencyStop;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OpenLoad => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::OpenLoad;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::OpenLoad;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::OpenLoad;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::OpenLoad;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverCurrent => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::OverCurrent;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::OverCurrent;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::OverCurrent;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::OverCurrent;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OverHeat => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::OverHeat;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::OverHeat;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::OverHeat;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::OverHeat;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::OscillationRotation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::OscillationRotation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::OscillationRotation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationAgitation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::OscillationAgitation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::OscillationAgitation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartRotation => {
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::StartRotation;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().global_phase = StepperState::StartRotation;
+                                    timers_and_phases.lock().global_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPauseRotation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StartPauseRotation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::StartPauseRotation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPausePreAgitation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StartPausePreAgitation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::StartPausePreAgitation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartAgitation => {
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::StartAgitation;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().global_phase = StepperState::StartAgitation;
+                                    timers_and_phases.lock().global_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPauseAgitation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StartPauseAgitation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::StartPauseAgitation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StartPausePostAgitation => {
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StartPausePostAgitation;
-                                    timers_and_phases.lock().unwrap().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().phase = StepperState::StartPausePostAgitation;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::StepgenAgitationError => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StepgenAgitationError;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::StepgenAgitationError;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::StepgenAgitationError;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::StepgenAgitationError;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::StepgenRotationError => {
-                                    timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().unwrap().phase = StepperState::StepgenRotationError;
-                                    timers_and_phases.lock().unwrap().phase_start_time = None;
-                                    timers_and_phases.lock().unwrap().global_phase = StepperState::StepgenRotationError;
-                                    timers_and_phases.lock().unwrap().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_stop_time_motor_stopped();
+                                    timers_and_phases.lock().phase = StepperState::StepgenRotationError;
+                                    timers_and_phases.lock().phase_start_time = None;
+                                    timers_and_phases.lock().global_phase = StepperState::StepgenRotationError;
+                                    timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, std::sync::atomic::Ordering::Relaxed);
                                 }
                                 StepperState::Invalid => {
-                                    port.lock().unwrap().as_mut().unwrap().clear(ClearBuffer::All).ok();
+                                    port.lock().as_mut().unwrap().clear(ClearBuffer::All).ok();
                                 }
                             }
                         }
@@ -224,7 +225,7 @@ impl Serial {
     pub fn send_bytes(&self, bytes: Vec<u8>) {
         let port = self.port.clone();
         thread::spawn(move || {
-            if let Some(port) = port.lock().unwrap().as_mut() {
+            if let Some(port) = port.lock().as_mut() {
                 port.clear(ClearBuffer::All).ok();
                 port.write_all(&bytes).ok();
             }

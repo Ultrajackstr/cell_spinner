@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::thread;
@@ -7,6 +7,7 @@ use std::time::Instant;
 use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
 use fugit::TimerInstantU64;
+use parking_lot::Mutex;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS};
 use crate::utils::enums::StepperState;
@@ -98,8 +99,8 @@ impl Motor {
             return;
         }
         self.is_running.store(true, Ordering::Relaxed);
-        self.timers_and_phases.lock().unwrap().motor_start_time = Some(Instant::now());
-        self.timers_and_phases.lock().unwrap().motor_stop_time_ms = None;
+        self.timers_and_phases.lock().motor_start_time = Some(Instant::now());
+        self.timers_and_phases.lock().motor_stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(self.protocol.bytes_vec_to_send());
     }
@@ -107,11 +108,11 @@ impl Motor {
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(vec![b'x']);
         self.is_running.store(false, Ordering::Relaxed);
-        self.timers_and_phases.lock().unwrap().set_stop_time_motor_stopped();
-        self.timers_and_phases.lock().unwrap().phase_start_time = None;
-        self.timers_and_phases.lock().unwrap().global_phase_start_time = None;
-        self.timers_and_phases.lock().unwrap().phase = StepperState::default();
-        self.timers_and_phases.lock().unwrap().global_phase = StepperState::default();
+        self.timers_and_phases.lock().set_stop_time_motor_stopped();
+        self.timers_and_phases.lock().phase_start_time = None;
+        self.timers_and_phases.lock().global_phase_start_time = None;
+        self.timers_and_phases.lock().phase = StepperState::default();
+        self.timers_and_phases.lock().global_phase = StepperState::default();
     }
 
     pub fn get_revolutions_per_rotation_cycle(&self) -> f64 {
@@ -157,7 +158,7 @@ impl Motor {
         let steps_rotation = self.steps_per_cycle.steps_per_direction_cycle_rotation.clone();
         // Rotation
         thread::spawn(move || {
-            points_rotation.lock().unwrap().clear();
+            points_rotation.lock().clear();
             let mut stepgen = rotation.create_stepgen();
             let mut delay_acc_us = 0;
             let mut rpm_for_graph = 0.0;
@@ -167,22 +168,22 @@ impl Motor {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
             while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
-                let is_max_points = points_rotation.lock().unwrap().len() > MAX_POINTS_GRAPHS;
+                let is_max_points = points_rotation.lock().len() > MAX_POINTS_GRAPHS;
                 current_time = delay_acc_us as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
                 }
                 if rpm_for_graph != last_rpm && !is_max_points {
-                    points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                    points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
                 } else if (current_time as u64) % 100_000 == 0 && !is_max_points {
-                    points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                    points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
                 steps_rotation.store(stepgen.get_current_step(), Ordering::Relaxed);
             }
-            points_rotation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+            points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
         });
     }
 
@@ -195,7 +196,7 @@ impl Motor {
         let steps_agitation = self.steps_per_cycle.steps_per_direction_cycle_agitation.clone();
         // Agitation
         thread::spawn(move || {
-            points_agitation.lock().unwrap().clear();
+            points_agitation.lock().clear();
             let mut stepgen = agitation.create_stepgen();
             let mut delay_acc_us = 0;
             let mut rpm_for_graph = 0.0;
@@ -205,22 +206,22 @@ impl Motor {
                 TimerInstantU64::from_ticks((prev_delay as f64 * 0.001) as u64)
             };
             while let Some(delay) = stepgen.next_delay(Some(now(delay_acc_us))) {
-                let is_max_points = points_agitation.lock().unwrap().len() > MAX_POINTS_GRAPHS;
+                let is_max_points = points_agitation.lock().len() > MAX_POINTS_GRAPHS;
                 current_time = delay_acc_us as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / agitation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
                 if index_thead_initial != index_thread.load(Ordering::Relaxed) {
                     return;
                 }
                 if rpm_for_graph != last_rpm && !is_max_points {
-                    points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                    points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
                 } else if (current_time as u64) % 100_000 == 0 && !is_max_points {
-                    points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+                    points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
                 steps_agitation.store(stepgen.get_current_step(), Ordering::Relaxed);
             }
-            points_agitation.lock().unwrap().push([current_time * 0.001, rpm_for_graph]);
+            points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
         });
     }
 }
