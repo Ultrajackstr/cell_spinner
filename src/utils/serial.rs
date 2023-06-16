@@ -127,7 +127,7 @@ impl Serial {
                                     is_running.store(false, Ordering::SeqCst);
                                 }
                                 StepperState::StartRotation | StepperState::StartAgitation => {
-                                    timers_and_phases.lock().global_phase = StepperState::StartRotation;
+                                    timers_and_phases.lock().global_phase = state;
                                     timers_and_phases.lock().global_phase_start_time = Some(Instant::now());
                                 }
                                 _ => {
