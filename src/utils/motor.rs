@@ -54,10 +54,11 @@ impl Motor {
         })
     }
 
-    pub fn new_with_protocol_and_graph(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol, graph: Graph) -> Result<Self, Error> {
+    pub fn new_with_already_loaded_protocol(serial_port: String, motor_name: String, already_connected_ports: Arc<Mutex<Vec<String>>>, protocol: Protocol, graph: Graph, steps_per_cycle: StepsCycle) -> Result<Self, Error> {
         let mut motor = Self::new(serial_port, motor_name, already_connected_ports)?;
         motor.protocol = protocol;
         motor.graph = graph;
+        motor.steps_per_cycle = steps_per_cycle;
         Ok(motor)
     }
 

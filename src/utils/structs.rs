@@ -132,7 +132,7 @@ impl TimersAndPhases {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct StepsCycle {
     pub steps_per_direction_cycle_rotation: Arc<AtomicU64>,
     pub steps_per_direction_cycle_agitation: Arc<AtomicU64>,

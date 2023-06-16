@@ -59,10 +59,11 @@ impl Tabs<'_> {
         let motors = self.motor.clone();
         let channels = self.channels.message_tx.clone();
         let already_connected_ports = self.already_connected_ports.clone();
-        let current_protocol = self.motor.get(&tab).unwrap().protocol;
-        let current_graph = self.motor.get(&tab).unwrap().graph.clone();
+        let protocol = self.motor.get(&tab).unwrap().protocol;
+        let graph = self.motor.get(&tab).unwrap().graph.clone();
+        let steps_per_cycle = self.motor.get(&tab).unwrap().steps_per_cycle.clone();
         thread::spawn(move || {
-            let motor = match Motor::new_with_protocol_and_graph(serial_port, motor_name, already_connected_ports, current_protocol, current_graph) {
+            let motor = match Motor::new_with_already_loaded_protocol(serial_port, motor_name, already_connected_ports, protocol, graph, steps_per_cycle) {
                 Ok(motor) => motor,
                 Err(err) => {
                     channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
