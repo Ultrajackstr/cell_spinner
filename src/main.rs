@@ -33,21 +33,20 @@ fn load_icon(data: &[u8]) -> eframe::IconData {
 
 fn create_log_folder_and_cleanup() -> PathBuf {
     let process_create_dir = || -> Result<PathBuf, Error> {
-        let mut save_path = PathBuf::new();
+        let mut main_path = PathBuf::new();
         let date = Local::now().format("%Y-%m-%d").to_string();
         if let Some(home_dir) = home_dir() {
-            save_path.push(&home_dir);
+            main_path.push(&home_dir);
         }
-        save_path.push(APP_NAME);
-        save_path.push(&date);
-        let log_path = save_path.join("logs");
+        main_path.push(APP_NAME);
+        let log_path = main_path.join(&date).join("logs");
 
         create_dir_all(&log_path)?;
 
         // Old log files cleanup
         let mut vec = Vec::new();
-        for file in WalkDir::new(&save_path).into_iter().filter_map(|e| e.ok()) {
-            if file.file_type().is_file() {
+        for file in WalkDir::new(&main_path).into_iter().filter_map(|e| e.ok()) {
+            if file.file_type().is_file() && file.file_name().to_string_lossy().contains("cell_spinner_") {
                 if let Some(ext) = file.path().extension() {
                     if ext == "log" {
                         vec.push(file.path().to_path_buf());

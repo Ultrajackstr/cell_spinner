@@ -224,6 +224,9 @@ impl CellSpinner {
                         .clicked() {
                         if let Some(mut path) = home_dir() {
                             path.push("cell_spinner");
+                            let date = Local::now().format("%Y-%m-%d").to_string();
+                            path.push(&date);
+                            path.push("logs");
                             match Command::new("explorer")
                                 .arg(path)
                                 .spawn() {
