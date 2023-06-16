@@ -80,7 +80,7 @@ impl Serial {
         let is_running = is_running.clone();
         let timers_and_phases = timers_and_phases.clone();
         thread::spawn(move || {
-            while is_running.load(Ordering::Relaxed) {
+            while is_running.load(Ordering::SeqCst) {
                 let mut buf: [u8; 3];
                 // Check if there is a byte to read
                 let is_byte = match port.lock().as_mut().unwrap().bytes_to_read() {
@@ -114,7 +114,7 @@ impl Serial {
                                     timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
-                                    is_running.store(false, Ordering::Relaxed);
+                                    is_running.store(false, Ordering::SeqCst);
                                 }
                                 StepperState::Finished => {
                                     timers_and_phases.lock().set_stop_time_motor_stopped();
@@ -124,7 +124,7 @@ impl Serial {
                                     timers_and_phases.lock().global_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
-                                    is_running.store(false, Ordering::Relaxed);
+                                    is_running.store(false, Ordering::SeqCst);
                                 }
                                 StepperState::StartRotation | StepperState::StartAgitation => {
                                     timers_and_phases.lock().global_phase = StepperState::StartRotation;

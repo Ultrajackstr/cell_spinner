@@ -66,7 +66,7 @@ impl Motor {
     }
 
     pub fn get_is_running(&self) -> bool {
-        self.is_running.load(Ordering::Relaxed)
+        self.is_running.load(Ordering::SeqCst)
     }
 
     pub fn disconnect(&mut self) {
@@ -98,7 +98,7 @@ impl Motor {
             }
             return;
         }
-        self.is_running.store(true, Ordering::Relaxed);
+        self.is_running.store(true, Ordering::SeqCst);
         self.timers_and_phases.lock().motor_start_time = Some(Instant::now());
         self.timers_and_phases.lock().motor_stop_time_ms = None;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
@@ -107,7 +107,7 @@ impl Motor {
 
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(&[b'x']);
-        self.is_running.store(false, Ordering::Relaxed);
+        self.is_running.store(false, Ordering::SeqCst);
         self.timers_and_phases.lock().set_stop_time_motor_stopped();
         self.timers_and_phases.lock().phase_start_time = None;
         self.timers_and_phases.lock().global_phase_start_time = None;
@@ -116,11 +116,11 @@ impl Motor {
     }
 
     pub fn get_revolutions_per_rotation_cycle(&self) -> f64 {
-        self.steps_per_cycle.steps_per_direction_cycle_rotation.load(Ordering::Relaxed) as f64 / (self.protocol.rotation.step_mode.get_multiplier() as f64 * 200.0)
+        self.steps_per_cycle.steps_per_direction_cycle_rotation.load(Ordering::SeqCst) as f64 / (self.protocol.rotation.step_mode.get_multiplier() as f64 * 200.0)
     }
 
     pub fn get_revolutions_per_agitation_cycle(&self) -> f64 {
-        self.steps_per_cycle.steps_per_direction_cycle_agitation.load(Ordering::Relaxed) as f64 / (self.protocol.agitation.step_mode.get_multiplier() as f64 * 200.0)
+        self.steps_per_cycle.steps_per_direction_cycle_agitation.load(Ordering::SeqCst) as f64 / (self.protocol.agitation.step_mode.get_multiplier() as f64 * 200.0)
     }
 
     pub fn import_protocol(&mut self, protocol: Protocol) -> Result<(), Error> {
@@ -153,8 +153,8 @@ impl Motor {
         let points_rotation = self.graph.rotation_points.clone();
         let rotation = self.protocol.rotation;
         let index_thread = self.graph.rotation_thread_index.clone();
-        index_thread.fetch_add(1, Ordering::Relaxed);
-        let index_thead_initial = index_thread.load(Ordering::Relaxed);
+        index_thread.fetch_add(1, Ordering::SeqCst);
+        let index_thead_initial = index_thread.load(Ordering::SeqCst);
         let steps_rotation = self.steps_per_cycle.steps_per_direction_cycle_rotation.clone();
         // Rotation
         thread::spawn(move || {
@@ -171,7 +171,7 @@ impl Motor {
                 let is_max_points = points_rotation.lock().len() > MAX_POINTS_GRAPHS;
                 current_time = delay_acc_ms as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / rotation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
-                if index_thead_initial != index_thread.load(Ordering::Relaxed) {
+                if index_thead_initial != index_thread.load(Ordering::SeqCst) {
                     return;
                 }
                 if rpm_for_graph != last_rpm && !is_max_points {
@@ -181,7 +181,7 @@ impl Motor {
                     points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_ms += delay;
-                steps_rotation.store(stepgen.get_current_step(), Ordering::Relaxed);
+                steps_rotation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
             points_rotation.lock().push([current_time * 0.001, rpm_for_graph]);
         });
@@ -191,8 +191,8 @@ impl Motor {
         let points_agitation = self.graph.agitation_points.clone();
         let agitation = self.protocol.agitation;
         let index_thread = self.graph.agitation_thread_index.clone();
-        index_thread.fetch_add(1, Ordering::Relaxed);
-        let index_thead_initial = index_thread.load(Ordering::Relaxed);
+        index_thread.fetch_add(1, Ordering::SeqCst);
+        let index_thead_initial = index_thread.load(Ordering::SeqCst);
         let steps_agitation = self.steps_per_cycle.steps_per_direction_cycle_agitation.clone();
         // Agitation
         thread::spawn(move || {
@@ -209,7 +209,7 @@ impl Motor {
                 let is_max_points = points_agitation.lock().len() > MAX_POINTS_GRAPHS;
                 current_time = delay_acc_ms as f64 * 0.001;
                 rpm_for_graph = 300_000.0 / agitation.step_mode.get_multiplier() as f64 / (delay + 1) as f64;
-                if index_thead_initial != index_thread.load(Ordering::Relaxed) {
+                if index_thead_initial != index_thread.load(Ordering::SeqCst) {
                     return;
                 }
                 if rpm_for_graph != last_rpm && !is_max_points {
@@ -219,7 +219,7 @@ impl Motor {
                     points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
                 }
                 delay_acc_ms += delay;
-                steps_agitation.store(stepgen.get_current_step(), Ordering::Relaxed);
+                steps_agitation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
             points_agitation.lock().push([current_time * 0.001, rpm_for_graph]);
         });
