@@ -46,7 +46,7 @@ impl Widget for RotatingTube {
             // let line_2_end_position = Pos2::new(center.x, center.y + radius);
             // Add a black cross the size of the circle
             // The start and end position should rotate with the orientation
-            let line_1_start_position = center + self.orientation * Vec2::new(-radius, 0.0);
+            let line_1_start_position = center + self.orientation * Vec2::new(-radius, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
             let line_1_end_position = center + self.orientation * Vec2::new(radius, 0.0);
             let line_2_start_position = center + self.orientation * Vec2::new(0.0, -radius);
             let line_2_end_position = center + self.orientation * Vec2::new(0.0, radius);
