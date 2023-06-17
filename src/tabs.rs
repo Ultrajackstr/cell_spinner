@@ -12,6 +12,7 @@ use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_POINTS_GRAPHS, THEME};
 use crate::utils::enums::Direction;
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, DurationHelper, Durations, Message};
+use crate::utils::widget_rotating_tube::RotatingTube;
 
 pub struct Tabs<'a> {
     pub channels: &'a mut Channels,
@@ -603,6 +604,7 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                         });
+                        ui.add(RotatingTube::new(100.0, THEME.blue));
                         // Schematic of protocol
                         // ui.vertical_centered(|ui| {
                         //     ui.horizontal(|ui| {

@@ -5,3 +5,4 @@ pub mod protocols;
 pub mod serial;
 pub mod graph;
 pub mod motor;
+pub mod widget_rotating_tube;
