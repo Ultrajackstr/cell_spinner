@@ -45,7 +45,6 @@ catppuccin-egui = "3.0.0"
 dirs = "5.0.1"
 walkdir = "2.3.3"
 trash = "3.0.3"
-strum = { version = "0.24.1" , features = ["derive"] }
 
 [profile.release]
 opt-level = 3

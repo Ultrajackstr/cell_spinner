@@ -604,7 +604,9 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                         });
-                        ui.add(RotatingTube::new(100.0, THEME.blue));
+                        let mut widget_agitation = RotatingTube::new(75.0, THEME.blue);
+                        widget_agitation.rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
+                        ui.add(widget_agitation);
                         // Schematic of protocol
                         // ui.vertical_centered(|ui| {
                         //     ui.horizontal(|ui| {
