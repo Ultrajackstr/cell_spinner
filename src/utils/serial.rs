@@ -130,6 +130,16 @@ impl Serial {
                                     timers_and_phases.lock().global_phase = state;
                                     timers_and_phases.lock().global_phase_start_time = Some(Instant::now());
                                 }
+                                StepperState::OscillationRotation => {
+                                    timers_and_phases.lock().rotation_direction.reverse();
+                                    timers_and_phases.lock().phase = state;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
+                                }
+                                StepperState::OscillationAgitation => {
+                                    timers_and_phases.lock().agitation_direction.reverse();
+                                    timers_and_phases.lock().phase = state;
+                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
+                                }
                                 _ => {
                                     timers_and_phases.lock().phase = state;
                                     timers_and_phases.lock().phase_start_time = Some(Instant::now());

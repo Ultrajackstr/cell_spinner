@@ -77,6 +77,13 @@ impl Direction {
             Direction::Backward => &[1],
         }
     }
+
+    pub fn reverse(&self) -> Self {
+        match self {
+            Direction::Forward => Direction::Backward,
+            Direction::Backward => Direction::Forward,
+        }
+    }
 }
 
 impl Display for Direction {

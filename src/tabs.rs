@@ -1,9 +1,7 @@
-use std::f32::consts::PI;
 use std::sync::Arc;
 use std::thread;
 
 use dashmap::DashMap;
-use eframe::Frame;
 use egui::{Color32, RichText, Ui, WidgetText};
 use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
@@ -616,10 +614,16 @@ impl TabViewer for Tabs<'_> {
                                 let rpm = self.motor.get(tab).unwrap().protocol.rotation.rpm;
                                 rotation_widget.rpm = rpm;
                                 if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartRotation {
-                                    self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
-                                    // Reduce to modulo 360 to avoid overflow
+                                    let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().rotation_direction;
+                                    if direction == Direction::Forward {
+                                        self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
+                                    } else { self.motor.get_mut(tab).unwrap().angle_rotation -= rpm as f32 * 6.0 * frame_time_sec; }
+                                    // Reduce to modulo 360 to avoid overflow/underflow
                                     if self.motor.get(tab).unwrap().angle_rotation >= 360.0 {
                                         self.motor.get_mut(tab).unwrap().angle_rotation -= 360.0;
+                                    }
+                                    if self.motor.get(tab).unwrap().angle_rotation <= -360.0 {
+                                        self.motor.get_mut(tab).unwrap().angle_rotation += 360.0;
                                     }
                                     rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
                                 }
@@ -630,10 +634,16 @@ impl TabViewer for Tabs<'_> {
                                 let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
                                 agitation_widget.rpm = rpm;
                                 if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartAgitation {
-                                    self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
-                                    // Reduce to modulo 360 to avoid overflow
+                                    let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().agitation_direction;
+                                    if direction == Direction::Forward {
+                                        self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
+                                    } else { self.motor.get_mut(tab).unwrap().angle_agitation -= rpm as f32 * 6.0 * frame_time_sec; }
+                                    // Reduce to modulo 360 to avoid overflow/underflow
                                     if self.motor.get(tab).unwrap().angle_agitation >= 360.0 {
                                         self.motor.get_mut(tab).unwrap().angle_agitation -= 360.0;
+                                    }
+                                    if self.motor.get(tab).unwrap().angle_agitation <= -360.0 {
+                                        self.motor.get_mut(tab).unwrap().angle_agitation += 360.0;
                                     }
                                     agitation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
                                 }

@@ -1,8 +1,8 @@
 use eframe::emath::{Rot2, Vec2};
-use egui::{FontId, Pos2, RichText, TextStyle, Widget};
+use egui::{RichText, Widget};
 use egui::Direction::TopDown;
 
-use crate::app::{FONT_BUTTON_SIZE, THEME};
+use crate::app::THEME;
 use crate::utils::enums::Direction;
 
 pub struct RotatingTube {
@@ -41,7 +41,7 @@ impl RotatingTube {
 impl Widget for RotatingTube {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let desired_size = Vec2::splat(self.diameter);
-        let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
+        let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
         let visuals = ui.style().interact(&response);
         if ui.is_rect_visible(rect) {
             let center = rect.center();

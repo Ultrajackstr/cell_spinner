@@ -6,8 +6,7 @@ use std::time::Instant;
 use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
 
-use crate::utils::enums::StepperState;
-use crate::utils::widget_rotating_tube::RotatingTube;
+use crate::utils::enums::{Direction, StepperState};
 
 pub struct FontAndButtonSize {
     pub font_table: f32,
@@ -104,6 +103,8 @@ pub struct TimersAndPhases {
     pub phase_start_time: Option<Instant>,
     pub global_phase: StepperState,
     pub global_phase_start_time: Option<Instant>,
+    pub rotation_direction: Direction,
+    pub agitation_direction: Direction
 }
 
 impl TimersAndPhases {
