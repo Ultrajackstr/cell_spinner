@@ -1,7 +1,9 @@
+use std::f32::consts::PI;
 use std::sync::Arc;
 use std::thread;
 
 use dashmap::DashMap;
+use eframe::Frame;
 use egui::{Color32, RichText, Ui, WidgetText};
 use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
@@ -17,6 +19,7 @@ use crate::utils::widget_rotating_tube::RotatingTube;
 pub struct Tabs<'a> {
     pub channels: &'a mut Channels,
     pub main_context: egui::Context,
+    // pub frame: &'a mut Frame,
     pub available_ports: &'a mut Vec<String>,
     pub already_connected_ports: &'a mut Arc<Mutex<Vec<String>>>,
     pub selected_port: &'a mut DashMap<usize, String>,
@@ -111,6 +114,8 @@ impl TabViewer for Tabs<'_> {
             *self.can_tab_close = false;
             return;
         }
+        self.motor.get_mut(tab).unwrap().frame_hisory.on_new_frame(self.main_context.input(|i| i.time), None);
+        let frame_time_sec = 1.0 / self.motor.get(tab).unwrap().frame_hisory.fps();
         let is_connected = self.motor.get(tab).unwrap().get_is_connected();
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
@@ -604,9 +609,13 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                         });
-                        let mut widget_agitation = RotatingTube::new(75.0, THEME.blue);
-                        widget_agitation.rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
-                        ui.add(widget_agitation);
+                        let mut rotation_widget = RotatingTube::new(75.0, THEME.blue);
+                        let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
+                        rotation_widget.rpm = rpm;
+                        self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
+                        // let angle = rpm as f32 * 6.0 * frame_time_sec;
+                        rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
+                        ui.add(rotation_widget);
                         // Schematic of protocol
                         // ui.vertical_centered(|ui| {
                         //     ui.horizontal(|ui| {

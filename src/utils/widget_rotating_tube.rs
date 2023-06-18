@@ -7,11 +7,23 @@ use crate::utils::enums::Direction;
 
 
 pub struct RotatingTube {
-    diameter: f32,
+    pub diameter: f32,
     pub direction: Direction,
-    orientation: Rot2,
-    color: egui::Color32,
+    pub angle_degrees: f32,
+    pub color: egui::Color32,
     pub rpm: u32,
+}
+
+impl Default for RotatingTube {
+    fn default() -> Self {
+        Self {
+            diameter: 75.0,
+            direction: Direction::Forward,
+            angle_degrees: 0.0,
+            color: egui::Color32::LIGHT_GRAY,
+            rpm: 0,
+        }
+    }
 }
 
 impl RotatingTube {
@@ -19,7 +31,7 @@ impl RotatingTube {
         Self {
             diameter,
             direction: Direction::Forward,
-            orientation: Rot2::from_angle(0.0),
+            angle_degrees: 0.0,
             color,
             rpm: 0,
         }
@@ -40,16 +52,13 @@ impl Widget for RotatingTube {
             let mut stroke = visuals.fg_stroke;
             stroke.width = stroke_width;
             ui.painter().circle(center, radius, self.color, stroke);
-            // let line_1_start_position = Pos2::new(
-            // let line_1_end_position = Pos2::new(center.x + radius, center.y);
-            // let line_2_start_position = Pos2::new(center.x, center.y - radius);
-            // let line_2_end_position = Pos2::new(center.x, center.y + radius);
             // Add a black cross the size of the circle
             // The start and end position should rotate with the orientation
-            let line_1_start_position = center + self.orientation * Vec2::new(-radius, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
-            let line_1_end_position = center + self.orientation * Vec2::new(radius, 0.0);
-            let line_2_start_position = center + self.orientation * Vec2::new(0.0, -radius);
-            let line_2_end_position = center + self.orientation * Vec2::new(0.0, radius);
+            let rotation = Rot2::from_angle(self.angle_degrees.to_radians());
+            let line_1_start_position = center + rotation * Vec2::new(-radius, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
+            let line_1_end_position = center + rotation * Vec2::new(radius, 0.0);
+            let line_2_start_position = center + rotation * Vec2::new(0.0, -radius);
+            let line_2_end_position = center + rotation * Vec2::new(0.0, radius);
             ui.painter().line_segment([line_1_start_position, line_1_end_position], (stroke_width, visuals.fg_stroke.color));
             ui.painter().line_segment([line_2_start_position, line_2_end_position], (stroke_width, visuals.fg_stroke.color));
             // Write the RPM in the middle in white

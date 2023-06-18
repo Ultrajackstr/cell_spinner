@@ -11,6 +11,7 @@ use parking_lot::Mutex;
 
 use crate::app::{MAX_ACCELERATION, MAX_DURATION_MS, MAX_POINTS_GRAPHS};
 use crate::utils::enums::StepperState;
+use crate::utils::frame_history::FrameHistory;
 use crate::utils::graph::Graph;
 use crate::utils::protocols::Protocol;
 use crate::utils::serial::Serial;
@@ -24,6 +25,9 @@ pub struct Motor {
     pub graph: Graph,
     pub timers_and_phases: Arc<Mutex<TimersAndPhases>>,
     pub steps_per_cycle: StepsCycle,
+    pub frame_hisory: FrameHistory,
+    pub angle_rotation: f32,
+    pub angle_agitation: f32,
 }
 
 impl Default for Motor {
@@ -36,6 +40,9 @@ impl Default for Motor {
             graph: Graph::default(),
             timers_and_phases: Arc::new(Mutex::new(TimersAndPhases::default())),
             steps_per_cycle: StepsCycle::default(),
+            frame_hisory: FrameHistory::default(),
+            angle_rotation: 0.0,
+            angle_agitation: 0.0,
         }
     }
 }
@@ -51,6 +58,9 @@ impl Motor {
             graph: Graph::default(),
             timers_and_phases: Arc::new(Mutex::new(TimersAndPhases::default())),
             steps_per_cycle: StepsCycle::default(),
+            frame_hisory: FrameHistory::default(),
+            angle_rotation: 0.0,
+            angle_agitation: 0.0,
         })
     }
 

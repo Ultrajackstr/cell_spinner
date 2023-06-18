@@ -7,6 +7,7 @@ use anyhow::Error;
 use egui_toast::{Toast, ToastKind};
 
 use crate::utils::enums::StepperState;
+use crate::utils::widget_rotating_tube::RotatingTube;
 
 pub struct FontAndButtonSize {
     pub font_table: f32,
