@@ -41,7 +41,7 @@ impl RotatingTube {
 impl Widget for RotatingTube {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let desired_size = Vec2::splat(self.diameter);
-        let (rect, response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
+        let (rect, mut response) = ui.allocate_exact_size(desired_size, egui::Sense::hover());
         let visuals = ui.style().interact(&response);
         if ui.is_rect_visible(rect) {
             let center = rect.center();
@@ -62,23 +62,18 @@ impl Widget for RotatingTube {
             let line_1_end_position = center + rotation * Vec2::new(0.0, radius);
             let line_2_start_position = center + rotation * Vec2::new(0.0, 0.0);
             let line_2_end_position = center + rotation * Vec2::new(0.0, -radius - stroke_width);
-            let line_3_start_position = center + rotation * Vec2::new(0.0, 0.0);
+            let line_3_start_position = center + rotation * Vec2::new(-radius, 0.0);
             let line_3_end_position = center + rotation * Vec2::new(radius, 0.0);
-            let line_4_start_position = center + rotation * Vec2::new(0.0, 0.0);
-            let line_4_end_position = center + rotation * Vec2::new(-radius, 0.0);
             ui.painter().line_segment([line_1_start_position, line_1_end_position], stroke);
             ui.painter().line_segment([line_2_start_position, line_2_end_position], stroke_red);
             ui.painter().line_segment([line_3_start_position, line_3_end_position], stroke);
-            ui.painter().line_segment([line_4_start_position, line_4_end_position], stroke);
             // Write the RPM in the middle in white
             let text = format!("{} RPM", self.rpm);
             let center_rect = egui::Rect::from_center_size(center, Vec2::splat(self.diameter));
             ui.allocate_ui_at_rect(center_rect, |ui| {
-                // ui.painter().text(center, egui::Align2::CENTER_CENTER, text, TextStyle::Body.resolve(ui.style()), egui::Color32::WHITE);
                 ui.allocate_ui_with_layout(center_rect.size(), egui::Layout::centered_and_justified(TopDown), |ui| {
                     ui.label(RichText::new(text).color(egui::Color32::WHITE).size(font_size).strong());
                 });
-                // ui.label(RichText::new(text).color(egui::Color32::WHITE).size(FONT_BUTTON_SIZE.font_default));
             });
         }
         response

@@ -88,7 +88,7 @@ impl Display for Direction {
     }
 }
 
-#[derive(Debug, Default, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 pub enum StepperState {
     CommandReceived,
     #[default]

@@ -11,7 +11,7 @@ use egui_toast::ToastKind;
 use parking_lot::Mutex;
 
 use crate::app::{FONT_BUTTON_SIZE, MAX_ACCELERATION, MAX_POINTS_GRAPHS, THEME};
-use crate::utils::enums::Direction;
+use crate::utils::enums::{Direction, StepperState};
 use crate::utils::motor::Motor;
 use crate::utils::structs::{Channels, DurationHelper, Durations, Message};
 use crate::utils::widget_rotating_tube::RotatingTube;
@@ -585,7 +585,7 @@ impl TabViewer for Tabs<'_> {
                         });
                         ui.separator();
                         ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
-                        ui.vertical_centered(|ui| {
+                        ui.vertical(|ui| {
                             let global_current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase.to_string();
                             let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_phase_start_as_millis();
                             let current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().phase.to_string();
@@ -598,8 +598,8 @@ impl TabViewer for Tabs<'_> {
                                         let duration = DurationHelper::new_from_milliseconds(run_time_global_current_phase_ms);
                                         let run_time_global_current_phase = format!("{} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds);
                                         ui.label(RichText::new(run_time_global_current_phase).size(FONT_BUTTON_SIZE.font_large));
-                                        ui.end_row();
                                         if run_time_current_phase_ms != 0 {
+                                            ui.end_row();
                                             ui.label(current_phase);
                                             let duration = DurationHelper::new_from_milliseconds(run_time_current_phase_ms);
                                             ui.label(RichText::new(format!("{} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)));
@@ -608,31 +608,37 @@ impl TabViewer for Tabs<'_> {
                                         ui.label(RichText::new(current_phase).size(FONT_BUTTON_SIZE.font_large));
                                     }
                                 });
-                        });
-                        //// Rotation & Agitation widgets
-                        ui.horizontal(|ui| {
-                            // Rotation
-                            let mut rotation_widget = RotatingTube::new(75.0, THEME.sapphire);
-                            let rpm = self.motor.get(tab).unwrap().protocol.rotation.rpm;
-                            rotation_widget.rpm = rpm;
-                            self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
-                            // Reduce to modulo 360 to avoid overflow
-                            if self.motor.get(tab).unwrap().angle_rotation >= 360.0 {
-                                self.motor.get_mut(tab).unwrap().angle_rotation -= 360.0;
-                            }
-                            rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
-                            ui.add(rotation_widget);
-                            // Agitation
-                            let mut agitation_widget = RotatingTube::new(75.0, THEME.blue);
-                            let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
-                            agitation_widget.rpm = rpm;
-                            self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
-                            // Reduce to modulo 360 to avoid overflow
-                            if self.motor.get(tab).unwrap().angle_agitation >= 360.0 {
-                                self.motor.get_mut(tab).unwrap().angle_agitation -= 360.0;
-                            }
-                            agitation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
-                            ui.add(agitation_widget);
+                            //// Rotation & Agitation widgets
+                            ui.horizontal(|ui| {
+                                let diameter = 75.0;
+                                // Rotation
+                                let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
+                                let rpm = self.motor.get(tab).unwrap().protocol.rotation.rpm;
+                                rotation_widget.rpm = rpm;
+                                if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartRotation {
+                                    self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
+                                    // Reduce to modulo 360 to avoid overflow
+                                    if self.motor.get(tab).unwrap().angle_rotation >= 360.0 {
+                                        self.motor.get_mut(tab).unwrap().angle_rotation -= 360.0;
+                                    }
+                                    rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
+                                }
+                                ui.add(rotation_widget).on_hover_text("Rotation");
+                                ui.add_space(140.0 - diameter);
+                                // Agitation
+                                let mut agitation_widget = RotatingTube::new(diameter, THEME.blue);
+                                let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
+                                agitation_widget.rpm = rpm;
+                                if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartAgitation {
+                                    self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
+                                    // Reduce to modulo 360 to avoid overflow
+                                    if self.motor.get(tab).unwrap().angle_agitation >= 360.0 {
+                                        self.motor.get_mut(tab).unwrap().angle_agitation -= 360.0;
+                                    }
+                                    agitation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
+                                }
+                                ui.add(agitation_widget).on_hover_text("Agitation");
+                            });
                         });
                         // Schematic of protocol
                         // ui.vertical_centered(|ui| {
