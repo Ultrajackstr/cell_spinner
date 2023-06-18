@@ -58,7 +58,7 @@ impl Widget for RotatingTube {
             // The start and end position should rotate with the orientation
             // One line is red for better visibility
             let rotation = Rot2::from_angle(self.angle_degrees.to_radians());
-            let line_1_start_position = center + rotation * Vec2::new(0.0, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
+            let line_1_start_position = center + rotation * Vec2::new(0.0, 0.0);
             let line_1_end_position = center + rotation * Vec2::new(0.0, radius);
             let line_2_start_position = center + rotation * Vec2::new(0.0, 0.0);
             let line_2_end_position = center + rotation * Vec2::new(0.0, -radius - stroke_width);
