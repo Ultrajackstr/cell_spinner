@@ -609,13 +609,31 @@ impl TabViewer for Tabs<'_> {
                                     }
                                 });
                         });
-                        let mut rotation_widget = RotatingTube::new(75.0, THEME.blue);
-                        let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
-                        rotation_widget.rpm = rpm;
-                        self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
-                        // let angle = rpm as f32 * 6.0 * frame_time_sec;
-                        rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
-                        ui.add(rotation_widget);
+                        //// Rotation & Agitation widgets
+                        ui.horizontal(|ui| {
+                            // Rotation
+                            let mut rotation_widget = RotatingTube::new(75.0, THEME.sapphire);
+                            let rpm = self.motor.get(tab).unwrap().protocol.rotation.rpm;
+                            rotation_widget.rpm = rpm;
+                            self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
+                            // Reduce to modulo 360 to avoid overflow
+                            if self.motor.get(tab).unwrap().angle_rotation >= 360.0 {
+                                self.motor.get_mut(tab).unwrap().angle_rotation -= 360.0;
+                            }
+                            rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
+                            ui.add(rotation_widget);
+                            // Agitation
+                            let mut agitation_widget = RotatingTube::new(75.0, THEME.blue);
+                            let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
+                            agitation_widget.rpm = rpm;
+                            self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
+                            // Reduce to modulo 360 to avoid overflow
+                            if self.motor.get(tab).unwrap().angle_agitation >= 360.0 {
+                                self.motor.get_mut(tab).unwrap().angle_agitation -= 360.0;
+                            }
+                            agitation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
+                            ui.add(agitation_widget);
+                        });
                         // Schematic of protocol
                         // ui.vertical_centered(|ui| {
                         //     ui.horizontal(|ui| {

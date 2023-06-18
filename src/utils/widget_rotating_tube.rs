@@ -1,10 +1,9 @@
 use eframe::emath::{Rot2, Vec2};
 use egui::{FontId, Pos2, RichText, TextStyle, Widget};
 use egui::Direction::TopDown;
-use crate::app::FONT_BUTTON_SIZE;
 
+use crate::app::{FONT_BUTTON_SIZE, THEME};
 use crate::utils::enums::Direction;
-
 
 pub struct RotatingTube {
     pub diameter: f32,
@@ -51,22 +50,32 @@ impl Widget for RotatingTube {
             let stroke_width = self.diameter * 0.05;
             let mut stroke = visuals.fg_stroke;
             stroke.width = stroke_width;
+            let mut stroke_red = visuals.fg_stroke;
+            stroke_red.width = stroke_width;
+            stroke_red.color = THEME.red;
             ui.painter().circle(center, radius, self.color, stroke);
-            // Add a black cross the size of the circle
+            // Add a black cross the size of the circle comprising of 4 lines
             // The start and end position should rotate with the orientation
+            // One line is red for better visibility
             let rotation = Rot2::from_angle(self.angle_degrees.to_radians());
-            let line_1_start_position = center + rotation * Vec2::new(-radius, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
-            let line_1_end_position = center + rotation * Vec2::new(radius, 0.0);
-            let line_2_start_position = center + rotation * Vec2::new(0.0, -radius);
-            let line_2_end_position = center + rotation * Vec2::new(0.0, radius);
-            ui.painter().line_segment([line_1_start_position, line_1_end_position], (stroke_width, visuals.fg_stroke.color));
-            ui.painter().line_segment([line_2_start_position, line_2_end_position], (stroke_width, visuals.fg_stroke.color));
+            let line_1_start_position = center + rotation * Vec2::new(0.0, 0.0); //TODO: check if this is correct and try to synchronize it with stepgen
+            let line_1_end_position = center + rotation * Vec2::new(0.0, radius);
+            let line_2_start_position = center + rotation * Vec2::new(0.0, 0.0);
+            let line_2_end_position = center + rotation * Vec2::new(0.0, -radius - stroke_width);
+            let line_3_start_position = center + rotation * Vec2::new(0.0, 0.0);
+            let line_3_end_position = center + rotation * Vec2::new(radius, 0.0);
+            let line_4_start_position = center + rotation * Vec2::new(0.0, 0.0);
+            let line_4_end_position = center + rotation * Vec2::new(-radius, 0.0);
+            ui.painter().line_segment([line_1_start_position, line_1_end_position], stroke);
+            ui.painter().line_segment([line_2_start_position, line_2_end_position], stroke_red);
+            ui.painter().line_segment([line_3_start_position, line_3_end_position], stroke);
+            ui.painter().line_segment([line_4_start_position, line_4_end_position], stroke);
             // Write the RPM in the middle in white
             let text = format!("{} RPM", self.rpm);
             let center_rect = egui::Rect::from_center_size(center, Vec2::splat(self.diameter));
             ui.allocate_ui_at_rect(center_rect, |ui| {
                 // ui.painter().text(center, egui::Align2::CENTER_CENTER, text, TextStyle::Body.resolve(ui.style()), egui::Color32::WHITE);
-                ui.allocate_ui_with_layout(center_rect.size(),egui::Layout::centered_and_justified(TopDown), |ui| {
+                ui.allocate_ui_with_layout(center_rect.size(), egui::Layout::centered_and_justified(TopDown), |ui| {
                     ui.label(RichText::new(text).color(egui::Color32::WHITE).size(font_size).strong());
                 });
                 // ui.label(RichText::new(text).color(egui::Color32::WHITE).size(FONT_BUTTON_SIZE.font_default));
