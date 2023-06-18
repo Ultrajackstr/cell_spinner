@@ -584,7 +584,7 @@ impl TabViewer for Tabs<'_> {
                         ui.separator();
                         ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
                         ui.vertical(|ui| {
-                            let global_current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase.to_string();
+                            let global_current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase;
                             let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_phase_start_as_millis();
                             let current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().phase.to_string();
                             let run_time_current_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_phase_start_as_millis();
@@ -592,7 +592,7 @@ impl TabViewer for Tabs<'_> {
                                 .min_col_width(140.0)
                                 .show(ui, |ui| {
                                     if run_time_global_current_phase_ms != 0 {
-                                        ui.label(RichText::new(global_current_phase).size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label(RichText::new(global_current_phase.to_string()).size(FONT_BUTTON_SIZE.font_large));
                                         let duration = DurationHelper::new_from_milliseconds(run_time_global_current_phase_ms);
                                         let run_time_global_current_phase = format!("{} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds);
                                         ui.label(RichText::new(run_time_global_current_phase).size(FONT_BUTTON_SIZE.font_large));
@@ -611,9 +611,15 @@ impl TabViewer for Tabs<'_> {
                                 let diameter = 75.0;
                                 // Rotation
                                 let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
-                                let rpm = self.motor.get(tab).unwrap().protocol.rotation.rpm;
-                                rotation_widget.rpm = rpm;
-                                if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartRotation {
+                                if is_running && global_current_phase == StepperState::StartRotation {
+                                    let mut rpm = 0;
+                                    self.motor.get(tab).unwrap().graph.rotation_points.lock().iter().any(|point| {
+                                        if point[0] >= run_time_current_phase_ms as f64 {
+                                            rpm = point[1] as u32;
+                                            true
+                                        } else { false }
+                                    });
+                                    rotation_widget.rpm = rpm;
                                     let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().rotation_direction;
                                     if direction == Direction::Forward {
                                         self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
@@ -633,7 +639,15 @@ impl TabViewer for Tabs<'_> {
                                 let mut agitation_widget = RotatingTube::new(diameter, THEME.blue);
                                 let rpm = self.motor.get(tab).unwrap().protocol.agitation.rpm;
                                 agitation_widget.rpm = rpm;
-                                if is_running && self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase == StepperState::StartAgitation {
+                                if is_running && global_current_phase == StepperState::StartAgitation {
+                                    let mut rpm = 0;
+                                    self.motor.get(tab).unwrap().graph.agitation_points.lock().iter().any(|point| {
+                                        if point[0] >= run_time_current_phase_ms as f64 {
+                                            rpm = point[1] as u32;
+                                            true
+                                        } else { false }
+                                    });
+                                    agitation_widget.rpm = rpm;
                                     let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().agitation_direction;
                                     if direction == Direction::Forward {
                                         self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
