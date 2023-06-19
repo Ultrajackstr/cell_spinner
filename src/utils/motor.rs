@@ -178,9 +178,12 @@ impl Motor {
         thread::spawn(move || {
             points_rotation.lock().clear();
             let mut stepgen = rotation.create_stepgen();
+            let duration_ms = rotation.duration_of_one_direction_cycle_ms;
+            let point_threshold_us = duration_ms * 1000 / 100; // 100 points per cycle while rpm is constant
             let mut delay_acc_us = 0;
             let mut rpm_for_graph;
             let mut last_rpm = 0.0;
+            let mut acc_us_for_points = 0;
             let now_ms = |prev_delay_us: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay_us as f64 * 0.001) as u64)
             };
@@ -193,10 +196,12 @@ impl Motor {
                 if rpm_for_graph != last_rpm && !is_max_points {
                     points_rotation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if delay_acc_us % 1_000_000 == 0 && !is_max_points {
+                } else if acc_us_for_points >= point_threshold_us && !is_max_points {
                     points_rotation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
+                    acc_us_for_points = 0;
                 }
                 delay_acc_us += delay;
+                acc_us_for_points += delay;
                 steps_rotation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
         });
@@ -213,9 +218,12 @@ impl Motor {
         thread::spawn(move || {
             points_agitation.lock().clear();
             let mut stepgen = agitation.create_stepgen();
+            let duration_ms = agitation.duration_of_one_direction_cycle_ms;
+            let point_threshold_us = duration_ms * 1000 / 100; // 100 points per cycle while rpm is constant
             let mut delay_acc_us = 0;
             let mut rpm_for_graph;
             let mut last_rpm = 0.0;
+            let mut acc_us_for_points = 0;
             let now_ms = |prev_delay_us: u64| -> TimerInstantU64<1000> {
                 TimerInstantU64::from_ticks((prev_delay_us as f64 * 0.001) as u64)
             };
@@ -228,10 +236,12 @@ impl Motor {
                 if rpm_for_graph != last_rpm && !is_max_points {
                     points_agitation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if delay_acc_us % 1_000_000 == 0 && !is_max_points {
+                } else if acc_us_for_points >= point_threshold_us && !is_max_points {
                     points_agitation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
+                    acc_us_for_points = 0;
                 }
                 delay_acc_us += delay_us;
+                acc_us_for_points += delay_us;
                 steps_agitation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
         });
