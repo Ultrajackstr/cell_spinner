@@ -619,7 +619,7 @@ impl TabViewer for Tabs<'_> {
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().iter().any(|point| {
                                         if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
-                                            rpm = point[1] as u32;
+                                            rpm = point[1].ceil() as u32;
                                             true
                                         } else { false }
                                     });
@@ -645,7 +645,7 @@ impl TabViewer for Tabs<'_> {
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().iter().any(|point| {
                                         if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
-                                            rpm = point[1] as u32;
+                                            rpm = point[1].ceil() as u32;
                                             true
                                         } else { false }
                                     });
@@ -702,7 +702,7 @@ impl TabViewer for Tabs<'_> {
                     .show_background(true)
                     .height(200.0)
                     .label_formatter(move |_s, value| {
-                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
+                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y.ceil())
                     })
                     .show(ui, |plot_ui| {
                         plot_ui.line(line);
@@ -724,7 +724,7 @@ impl TabViewer for Tabs<'_> {
                     .legend(Legend { position: Corner::RightTop, ..Default::default() })
                     .height(200.0)
                     .label_formatter(move |_s, value| {
-                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
+                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y.ceil())
                     })
                     .show(ui, |plot_ui| {
                         plot_ui.line(line);
