@@ -81,6 +81,9 @@ impl Motor {
     }
 
     pub fn disconnect(&mut self) {
+        if self.is_running.load(Ordering::SeqCst) {
+            self.stop_motor();
+        }
         self.serial.disconnect();
         self.serial = Serial::default();
     }
@@ -190,7 +193,7 @@ impl Motor {
                 if rpm_for_graph != last_rpm && !is_max_points {
                     points_rotation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if delay_acc_us % 100_000_000 == 0 && !is_max_points {
+                } else if delay_acc_us % 1_000_000 == 0 && !is_max_points {
                     points_rotation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                 }
                 delay_acc_us += delay;
@@ -225,7 +228,7 @@ impl Motor {
                 if rpm_for_graph != last_rpm && !is_max_points {
                     points_agitation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                     last_rpm = rpm_for_graph;
-                } else if delay_acc_us % 100_000_000 == 0 && !is_max_points {
+                } else if delay_acc_us % 1_000_000 == 0 && !is_max_points {
                     points_agitation.lock().push([delay_acc_us as f64 * 0.000001, rpm_for_graph]);
                 }
                 delay_acc_us += delay_us;

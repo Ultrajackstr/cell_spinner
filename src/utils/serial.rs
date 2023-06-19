@@ -40,6 +40,7 @@ impl Serial {
             .timeout(Duration::from_millis(2000))
             .open()?;
         let mut buf: [u8; 3];
+        system_port_unwrapped.clear(ClearBuffer::All)?;
         // First send the "bye!" command to be sure the RP-Pico is initialized
         system_port_unwrapped.write_all(b"bye!")?;
         thread::sleep(Duration::from_millis(200));
@@ -71,6 +72,7 @@ impl Serial {
 
     pub fn disconnect(&self) {
         if let Some(mut port) = self.port.lock().take() {
+            port.clear(ClearBuffer::All).ok();
             port.write_all(b"bye!").ok();
         }
     }
