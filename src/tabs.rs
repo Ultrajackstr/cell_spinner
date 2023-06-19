@@ -612,7 +612,7 @@ impl TabViewer for Tabs<'_> {
                                 });
                             //// Rotation & Agitation widgets
                             ui.horizontal(|ui| {
-                                let diameter = 75.0;
+                                let diameter = 65.0;
                                 // Rotation
                                 let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
                                 if is_running && global_current_phase == StepperState::StartRotation && current_phase != StepperState::StartPausePreAgitation {

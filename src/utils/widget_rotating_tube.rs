@@ -46,7 +46,7 @@ impl Widget for RotatingTube {
         if ui.is_rect_visible(rect) {
             let center = rect.center();
             let radius = rect.width() / 2.0;
-            let font_size = self.diameter * 0.18;
+            let font_size = self.diameter * 0.25;
             let stroke_width = self.diameter * 0.05;
             let mut stroke = visuals.fg_stroke;
             stroke.width = stroke_width;
@@ -68,7 +68,7 @@ impl Widget for RotatingTube {
             ui.painter().line_segment([line_2_start_position, line_2_end_position], stroke_red);
             ui.painter().line_segment([line_3_start_position, line_3_end_position], stroke);
             // Write the RPM in the middle in white
-            let text = format!("{} RPM", self.rpm);
+            let text = format!("{}\nRPM", self.rpm);
             let center_rect = egui::Rect::from_center_size(center, Vec2::splat(self.diameter));
             ui.allocate_ui_at_rect(center_rect, |ui| {
                 ui.allocate_ui_with_layout(center_rect.size(), egui::Layout::centered_and_justified(TopDown), |ui| {
