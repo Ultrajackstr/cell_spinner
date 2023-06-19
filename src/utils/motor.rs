@@ -114,6 +114,8 @@ impl Motor {
         self.timers_and_phases.lock().motor_stop_time_ms = None;
         self.timers_and_phases.lock().rotation_direction = self.protocol.rotation.direction;
         self.timers_and_phases.lock().agitation_direction = self.protocol.agitation.direction;
+        self.angle_rotation = 0.0;
+        self.angle_agitation = 0.0;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(&self.protocol.protocol_as_bytes());
     }
