@@ -613,8 +613,8 @@ impl TabViewer for Tabs<'_> {
                                 let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
                                 if is_running && global_current_phase == StepperState::StartRotation {
                                     let mut rpm = 0;
-                                    self.motor.get(tab).unwrap().graph.rotation_points.lock().iter().any(|point| {
-                                        if point[0] >= run_time_current_phase_ms as f64 {
+                                    self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().iter().any(|point| {
+                                        if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
                                             rpm = point[1] as u32;
                                             true
                                         } else { false }
@@ -641,8 +641,8 @@ impl TabViewer for Tabs<'_> {
                                 agitation_widget.rpm = rpm;
                                 if is_running && global_current_phase == StepperState::StartAgitation {
                                     let mut rpm = 0;
-                                    self.motor.get(tab).unwrap().graph.agitation_points.lock().iter().any(|point| {
-                                        if point[0] >= run_time_current_phase_ms as f64 {
+                                    self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().iter().any(|point| {
+                                        if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
                                             rpm = point[1] as u32;
                                             true
                                         } else { false }
@@ -690,9 +690,9 @@ impl TabViewer for Tabs<'_> {
         ui.visuals_mut().extreme_bg_color = THEME.base;
         // Graph Rotation
         egui::ScrollArea::horizontal().id_source("rotation_scroll").show(ui, |ui| {
-            let number_rotation_points = self.motor.get(tab).unwrap().graph.rotation_points.lock().len();
+            let number_rotation_points = self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().len();
             if number_rotation_points <= MAX_POINTS_GRAPHS {
-                let line = Line::new(self.motor.get(tab).unwrap().graph.rotation_points.lock().clone()).name("Rotation").color(THEME.sapphire);
+                let line = Line::new(self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().clone()).name("Rotation").color(THEME.sapphire);
                 egui::plot::Plot::new("rotation_graph")
                     .legend(Legend { position: Corner::RightTop, ..Default::default() })
                     .auto_bounds_x()
@@ -712,9 +712,9 @@ impl TabViewer for Tabs<'_> {
         ui.separator();
         // Graph Agitation
         egui::ScrollArea::horizontal().id_source("agitation_scroll").show(ui, |ui| {
-            let number_agitation_points = self.motor.get(tab).unwrap().graph.agitation_points.lock().len();
+            let number_agitation_points = self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().len();
             if number_agitation_points <= MAX_POINTS_GRAPHS {
-                let line = Line::new(self.motor.get(tab).unwrap().graph.agitation_points.lock().clone()).name("Agitation").color(THEME.blue);
+                let line = Line::new(self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().clone()).name("Agitation").color(THEME.blue);
                 egui::plot::Plot::new("agitation_graph")
                     .auto_bounds_x()
                     .auto_bounds_y()
