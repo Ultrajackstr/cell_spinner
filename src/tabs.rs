@@ -253,7 +253,7 @@ impl TabViewer for Tabs<'_> {
                 // Setup rotation phase
                 let mut rotation_graph_needs_update = false;
                 let current_main_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase;
-                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                ui.allocate_ui(egui::vec2(440.0, 280.0), |ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
@@ -422,7 +422,7 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 // Setup agitation phase
                 let mut agitation_graph_needs_update = false;
-                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                ui.allocate_ui(egui::vec2(440.0, 280.0), |ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
@@ -590,7 +590,7 @@ impl TabViewer for Tabs<'_> {
                 });
                 ui.separator();
                 // Setup durations
-                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                ui.allocate_ui(egui::vec2(440.0, 280.0), |ui| {
                     ui.vertical(|ui| {
                         ui.horizontal(|ui| {
                             ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
