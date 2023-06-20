@@ -168,13 +168,14 @@ impl CellSpinner {
                 let text = if let Some(origin) = message.origin {
                     format!("{}: {}", origin, message.message)
                 } else {
-                    message.message.to_string()
+                    message.message
                 };
                 if !message.is_waiting {
-                    send_toast(&self.channels.toast_tx, message.kind, text, message.duration);
+                    send_toast(&self.channels.toast_tx, message.kind, text.clone(), message.duration);
                 } else {
-                    self.info_message = text;
+                    self.info_message = text.clone();
                 }
+                tracing::info!("{}", text);
             }
         }
     }
@@ -264,7 +265,7 @@ impl CellSpinner {
                 ui.horizontal(|ui| {
                     // Disconnect button.
                     if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("DISCONNECT ALL").color(Color32::WHITE)).fill(THEME.red)).clicked() {
-                        self.motor.iter_mut().for_each(|mut motor| motor.disconnect());
+                        self.motor.iter_mut().for_each(|mut motor| motor.disconnect(self.channels.message_tx.clone()));
                         self.allowed_to_close = true;
                     }
                     ui.separator();
@@ -288,7 +289,7 @@ impl CellSpinner {
             let json = serde_json::to_string_pretty(&protocol).unwrap();
             file.write_all(json.as_bytes()).unwrap();
             let current_motor = self.motor.get(tab).unwrap().name.to_string();
-            let message: Message = Message::new(ToastKind::Info, "Configuration exported!", None, Some(current_motor), 3, false);
+            let message: Message = Message::new(ToastKind::Info, &format!("Configuration exported to {:?}!", &self.path_config.file_name().unwrap_or_default()), None, Some(current_motor), 3, false);
             self.message_handler(message);
             Ok(())
         };
@@ -322,11 +323,11 @@ impl CellSpinner {
                 });
                 if !errors_import.is_empty() {
                     for (motor_name, err) in errors_import.into_iter() {
-                        let message: Message = Message::new(ToastKind::Error, "Error while importing the configuration", Some(err), Some(motor_name), 3, false);
+                        let message: Message = Message::new(ToastKind::Error, &format!("Error while importing the configuration {:?}", &self.path_config.file_name().unwrap_or_default()), Some(err), Some(motor_name), 3, false);
                         self.message_handler(message);
                     }
                 } else {
-                    let message: Message = Message::new(ToastKind::Info, "Configuration imported for all stopped motors!", None, None, 3, false);
+                    let message: Message = Message::new(ToastKind::Info, &format!("Configuration {:?} imported for all stopped motors!", &self.path_config.file_name().unwrap_or_default()), None, None, 3, false);
                     self.message_handler(message);
                 }
                 self.durations.iter_mut().for_each(|mut durations| {
@@ -352,7 +353,7 @@ impl CellSpinner {
             } else {
                 self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
                 let current_motor = self.motor.get(tab).unwrap().name.to_string();
-                let message: Message = Message::new(ToastKind::Info, "Configuration imported!", None, Some(current_motor), 3, false);
+                let message: Message = Message::new(ToastKind::Info, &format!("Configuration {:?} imported!", &self.path_config.file_name().unwrap_or_default()), None, Some(current_motor), 3, false);
                 self.message_handler(message);
                 self.durations.get_mut(tab).unwrap().duration_of_one_direction_cycle_rotation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.duration_of_one_direction_cycle_ms);
                 self.durations.get_mut(tab).unwrap().pause_before_direction_change_rotation.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.rotation.pause_before_direction_change_ms);
@@ -374,7 +375,7 @@ impl CellSpinner {
         };
         if let Err(err) = fn_import() {
             let current_motor = self.motor.get(tab).unwrap().name.to_string();
-            let message: Message = Message::new(ToastKind::Error, "Error while importing the configuration", Some(err), Some(current_motor), 3, false);
+            let message: Message = Message::new(ToastKind::Error, &format!("Error while importing the configuration {:?}", &self.path_config.file_name().unwrap_or_default()), Some(err), Some(current_motor), 3, false);
             self.message_handler(message);
         }
     }

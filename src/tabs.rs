@@ -46,7 +46,7 @@ impl Tabs<'_> {
 
     fn remove_tab(&mut self, tab: usize) {
         self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
-        self.motor.get_mut(&tab).unwrap().disconnect();
+        self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         self.selected_port.remove(&tab);
         self.promise_serial_connect.remove(&tab);
         self.motor_name.remove(&tab);
@@ -65,17 +65,17 @@ impl Tabs<'_> {
         let graph = self.motor.get(&tab).unwrap().graph.clone();
         let steps_per_cycle = self.motor.get(&tab).unwrap().steps_per_cycle.clone();
         thread::spawn(move || {
-            let motor = match Motor::new_with_already_loaded_protocol(serial_port, motor_name, already_connected_ports, protocol, graph, steps_per_cycle) {
+            let motor = match Motor::new_with_already_loaded_protocol(serial_port.clone(), motor_name, already_connected_ports, protocol, graph, steps_per_cycle) {
                 Ok(motor) => motor,
                 Err(err) => {
-                    channels.as_ref().unwrap().send(Message::new(ToastKind::Error, "Error while connecting to serial port", Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
+                    channels.as_ref().unwrap().send(Message::new(ToastKind::Error, &format!("Error while connecting to serial port {}", serial_port), Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
                     promise.insert(tab, None);
                     return;
                 }
             };
             motors.insert(tab, motor);
             promise.insert(tab, None);
-            channels.as_ref().unwrap().send(Message::new(ToastKind::Success, "Successfully connected to serial port", None, Some(format!("Motor {}", tab)), 3, false)).ok();
+            channels.as_ref().unwrap().send(Message::new(ToastKind::Success, &format!("Successfully connected to serial port {}", serial_port), None, Some(format!("Motor {}", tab)), 3, false)).ok();
         });
     }
 
@@ -98,7 +98,7 @@ impl Tabs<'_> {
 
     fn disconnect(&mut self, tab: usize) {
         self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
-        self.motor.get_mut(&tab).unwrap().disconnect();
+        self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         self.selected_port.get_mut(&tab).unwrap().clear();
         self.refresh_available_serial_ports(tab);
     }
@@ -140,6 +140,7 @@ impl TabViewer for Tabs<'_> {
                             if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut()))
                                 .on_hover_text("Change the name of the motor")
                                 .lost_focus() {
+                                tracing::info!("Changed motor name {} to {}", self.motor.get(tab).unwrap().name, self.motor_name.get(tab).unwrap().value());
                                 self.motor.get_mut(tab).unwrap().name = self.motor_name.get(tab).unwrap().to_string();
                             }
                         });
@@ -154,10 +155,10 @@ impl TabViewer for Tabs<'_> {
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none() &&
                                               !self.available_ports.is_empty(), |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Connect").color(Color32::WHITE)).fill(THEME.green)).clicked() {
-                                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, "Connecting to serial port...", None, Some(format!("Motor {}", tab)), 0, true)).ok();
                                 let selected_port = self.selected_port.get(tab).unwrap().value().to_string();
                                 let motor_name = self.motor_name.get(tab).unwrap().clone();
-                                self.thread_spawn_new_motor(*tab, selected_port, motor_name);
+                                self.thread_spawn_new_motor(*tab, selected_port.clone(), motor_name);
+                                self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, &format!("Connecting to serial port {}...", selected_port), None, Some(format!("Motor {}", tab)), 0, true)).ok();
                             };
                         });
                     });
@@ -195,12 +196,12 @@ impl TabViewer for Tabs<'_> {
                         let stop_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("STOP MOTOR").color(Color32::WHITE)).fill(THEME.red))
                             .on_hover_text("Right click to stop all motors");
                         if stop_response.clicked() {
-                            self.motor.get_mut(tab).unwrap().stop_motor();
+                            self.motor.get_mut(tab).unwrap().stop_motor(self.channels.message_tx.clone());
                         } else if stop_response.secondary_clicked() {
                             // Stop all running motors
                             self.motor.iter_mut().for_each(|mut motor| {
                                 if motor.get_is_running() {
-                                    motor.stop_motor();
+                                    motor.stop_motor(self.channels.message_tx.clone());
                                 }
                             });
                         }
@@ -212,9 +213,11 @@ impl TabViewer for Tabs<'_> {
                     .fill(THEME.peach))
                     .on_hover_text("Stop all the motors and disconnect them.")
                     .clicked() {
+                    let message = Message::new(ToastKind::Warning, "Emergency stop", None, Some(self.motor.get(tab).unwrap().name.clone()), 5, false);
+                    self.channels.message_tx.as_ref().unwrap().send(message).ok();
                     self.motor.iter_mut().for_each(|mut motor| {
-                        motor.stop_motor();
-                        motor.disconnect();
+                        motor.stop_motor(self.channels.message_tx.clone());
+                        motor.disconnect(self.channels.message_tx.clone());
                     });
                 }
                 ui.separator();

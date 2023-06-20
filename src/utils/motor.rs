@@ -80,11 +80,15 @@ impl Motor {
         self.is_running.load(Ordering::SeqCst)
     }
 
-    pub fn disconnect(&mut self) {
+    pub fn disconnect(&mut self, message_tx: Option<Sender<Message>>) {
         if self.is_running.load(Ordering::SeqCst) {
-            self.stop_motor();
+            self.stop_motor(message_tx.clone());
         }
         self.serial.disconnect();
+        let message = Message::new(ToastKind::Info, &format!("Disconnected from {}", self.serial.port_name), None, Some(self.name.clone()), 3, false);
+        if let Some(message_tx) = message_tx {
+            message_tx.send(message).unwrap();
+        }
         self.serial = Serial::default();
     }
 
@@ -121,16 +125,22 @@ impl Motor {
         self.angle_agitation = 0.0;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(&self.protocol.protocol_as_bytes());
+        tracing::info!("Motor {} started.", self.name);
+        tracing::info!("Protocol: {:?}", self.protocol);
     }
 
-    pub fn stop_motor(&mut self) {
-        self.serial.send_bytes(&[b'x']);
+    pub fn stop_motor(&mut self, message_tx: Option<Sender<Message>>) {
         self.is_running.store(false, Ordering::SeqCst);
+        self.serial.send_bytes(&[b'x']);
         self.timers_and_phases.lock().set_global_stop_time_stopped();
         self.timers_and_phases.lock().sub_phase_start_time = None;
         self.timers_and_phases.lock().main_phase_start_time = None;
         self.timers_and_phases.lock().sub_phase = StepperState::default();
         self.timers_and_phases.lock().main_phase = StepperState::default();
+        let message = Message::new(ToastKind::Info, &format!("The motor {} has been stopped.", self.name), None, Some(self.name.clone()), 3, false);
+        if let Some(message_tx) = message_tx {
+            message_tx.send(message).unwrap();
+        }
     }
 
     pub fn get_revolutions_per_rotation_cycle(&self) -> f64 {
