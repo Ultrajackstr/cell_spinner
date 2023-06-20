@@ -220,8 +220,8 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 // Display run time
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
-                let run_time_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_motor_start_as_millis();
-                let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().motor_stop_time_ms;
+                let run_time_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_start_as_millis();
+                let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().global_stop_time_ms;
                 if run_time_ms != 0 && is_stop_time.is_none() {
                     let duration = DurationHelper::new_from_milliseconds(run_time_ms);
                     // Run time text.
@@ -250,13 +250,31 @@ impl TabViewer for Tabs<'_> {
         ////// SETUP //////
         egui::ScrollArea::horizontal().id_source("setup").show(ui, |ui| {
             ui.horizontal(|ui| {
-                ui.add_enabled_ui(!is_running, |ui| {
-                    // Setup rotation phase
-                    let mut rotation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
-                        ui.vertical(|ui| {
+                // Setup rotation phase
+                let mut rotation_graph_needs_update = false;
+                let current_main_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase;
+                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
                             ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
+                            // Rotation progress bar
+                            let rotation_duration_ms = self.motor.get(tab).unwrap().protocol.rotation_duration_ms;
+                            let current_rotation_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase_start_time {
+                                if current_main_phase == StepperState::StartRotation {
+                                    duration.elapsed().as_millis() as u64
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            };
+                            let progress = current_rotation_duration_ms as f32 / rotation_duration_ms as f32;
+                            ui.add(egui::ProgressBar::new(progress).show_percentage())
+                                .on_hover_text("Rotation progress");
+                        });
+                        ui.separator();
+                        ui.add_enabled_ui(!is_running, |ui| {
                             egui::Grid::new("rotation_grid")
                                 .show(ui, |ui| {
                                     // Slider for RPM
@@ -400,13 +418,32 @@ impl TabViewer for Tabs<'_> {
                             }
                         });
                     });
-                    ui.separator();
-                    // Setup agitation phase
-                    let mut agitation_graph_needs_update = false;
-                    ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
-                        ui.vertical(|ui| {
+                });
+                ui.separator();
+                // Setup agitation phase
+                let mut agitation_graph_needs_update = false;
+                ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
                             ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
+                            // Agitation progress bar
+                            let agitation_duration_ms = self.motor.get(tab).unwrap().protocol.agitation_duration_ms;
+                            let current_agitation_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase_start_time {
+                                if current_main_phase == StepperState::StartAgitation {
+                                    duration.elapsed().as_millis() as u64
+                                } else {
+                                    0
+                                }
+                            } else {
+                                0
+                            };
+                            let progress = current_agitation_duration_ms as f32 / agitation_duration_ms as f32;
+                            ui.add(egui::ProgressBar::new(progress).show_percentage())
+                                .on_hover_text("Agitation progress");
+                        });
+                        ui.separator();
+                        ui.add_enabled_ui(!is_running, |ui| {
                             egui::Grid::new("agitation_grid")
                                 .show(ui, |ui| {
                                     // Slider for RPM
@@ -555,9 +592,22 @@ impl TabViewer for Tabs<'_> {
                 // Setup durations
                 ui.allocate_ui(egui::vec2(385.0, 280.0), |ui| {
                     ui.vertical(|ui| {
-                        ui.add_enabled_ui(!is_running, |ui| {
+                        ui.horizontal(|ui| {
                             ui.label(RichText::new("Global Duration ⬇️").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
+                            // Global progress
+                            let global_duration_ms = self.motor.get(tab).unwrap().protocol.global_duration_ms;
+                            let current_global_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().global_start_time {
+                                duration.elapsed().as_millis() as u64
+                            } else {
+                                0
+                            };
+                            let progress = current_global_duration_ms as f32 / global_duration_ms as f32;
+                            ui.add(egui::ProgressBar::new(progress).show_percentage())
+                                .on_hover_text("Global progress");
+                        });
+                        ui.separator();
+                        ui.add_enabled_ui(!is_running, |ui| {
                             // Global duration of the protocol
                             ui.horizontal(|ui| {
                                 let color = if self.motor.get(tab).unwrap().protocol.global_duration_ms == 0 { THEME.red } else { THEME.text };
@@ -584,28 +634,28 @@ impl TabViewer for Tabs<'_> {
                         ui.separator();
                         ui.label(RichText::new("Current phase ⬇️").color(THEME.mauve).size(FONT_BUTTON_SIZE.font_large));
                         ui.vertical(|ui| {
-                            let global_current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().global_phase;
-                            let run_time_global_current_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_phase_start_as_millis();
-                            let current_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().phase;
-                            let run_time_current_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_phase_start_as_millis();
+                            let current_main_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase;
+                            let run_time_current_main_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_main_phase_start_as_millis();
+                            let current_sub_phase = self.motor.get(tab).unwrap().timers_and_phases.lock().sub_phase;
+                            let run_time_current_sub_phase_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_sub_phase_start_as_millis();
                             egui::Grid::new("phases")
                                 .min_col_width(140.0)
                                 .show(ui, |ui| {
-                                    if run_time_global_current_phase_ms != 0 {
-                                        ui.label(RichText::new(global_current_phase.to_string()).size(FONT_BUTTON_SIZE.font_large));
-                                        let duration = DurationHelper::new_from_milliseconds(run_time_global_current_phase_ms);
+                                    if run_time_current_main_phase_ms != 0 {
+                                        ui.label(RichText::new(current_main_phase.to_string()).size(FONT_BUTTON_SIZE.font_large));
+                                        let duration = DurationHelper::new_from_milliseconds(run_time_current_main_phase_ms);
                                         let run_time_global_current_phase = format!("{} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds);
                                         ui.label(RichText::new(run_time_global_current_phase).size(FONT_BUTTON_SIZE.font_large));
                                         ui.end_row();
-                                        if run_time_current_phase_ms != 0 {
-                                            ui.label(current_phase.to_string());
-                                            let duration = DurationHelper::new_from_milliseconds(run_time_current_phase_ms);
+                                        if run_time_current_sub_phase_ms != 0 {
+                                            ui.label(current_sub_phase.to_string());
+                                            let duration = DurationHelper::new_from_milliseconds(run_time_current_sub_phase_ms);
                                             ui.label(RichText::new(format!("{} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)));
                                         } else {
                                             ui.label("");
                                         }
                                     } else {
-                                        ui.label(RichText::new(current_phase.to_string()).size(FONT_BUTTON_SIZE.font_large));
+                                        ui.label(RichText::new(current_sub_phase.to_string()).size(FONT_BUTTON_SIZE.font_large));
                                         ui.end_row();
                                         ui.label("");
                                     }
@@ -615,10 +665,10 @@ impl TabViewer for Tabs<'_> {
                                 let diameter = 65.0;
                                 // Rotation
                                 let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
-                                if is_running && global_current_phase == StepperState::StartRotation && current_phase != StepperState::StartPausePreAgitation {
+                                if is_running && current_main_phase == StepperState::StartRotation && current_sub_phase != StepperState::StartPausePreAgitation {
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().iter().any(|point| {
-                                        if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
+                                        if point[0] * 1000.0 >= run_time_current_sub_phase_ms as f64 {
                                             rpm = point[1].round() as u32;
                                             true
                                         } else { false }
@@ -641,10 +691,10 @@ impl TabViewer for Tabs<'_> {
                                 ui.add_space(140.0 - diameter);
                                 // Agitation
                                 let mut agitation_widget = RotatingTube::new(diameter, THEME.blue);
-                                if is_running && global_current_phase == StepperState::StartAgitation && current_phase != StepperState::StartPausePostAgitation {
+                                if is_running && current_main_phase == StepperState::StartAgitation && current_sub_phase != StepperState::StartPausePostAgitation {
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().iter().any(|point| {
-                                        if point[0] * 1000.0 >= run_time_current_phase_ms as f64 {
+                                        if point[0] * 1000.0 >= run_time_current_sub_phase_ms as f64 {
                                             rpm = point[1].round() as u32;
                                             true
                                         } else { false }

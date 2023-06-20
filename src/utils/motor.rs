@@ -113,8 +113,8 @@ impl Motor {
             return;
         }
         self.is_running.store(true, Ordering::SeqCst);
-        self.timers_and_phases.lock().motor_start_time = Some(Instant::now());
-        self.timers_and_phases.lock().motor_stop_time_ms = None;
+        self.timers_and_phases.lock().global_start_time = Some(Instant::now());
+        self.timers_and_phases.lock().global_stop_time_ms = None;
         self.timers_and_phases.lock().rotation_direction = self.protocol.rotation.direction;
         self.timers_and_phases.lock().agitation_direction = self.protocol.agitation.direction;
         self.angle_rotation = 0.0;
@@ -126,11 +126,11 @@ impl Motor {
     pub fn stop_motor(&mut self) {
         self.serial.send_bytes(&[b'x']);
         self.is_running.store(false, Ordering::SeqCst);
-        self.timers_and_phases.lock().set_stop_time_motor_stopped();
-        self.timers_and_phases.lock().phase_start_time = None;
-        self.timers_and_phases.lock().global_phase_start_time = None;
-        self.timers_and_phases.lock().phase = StepperState::default();
-        self.timers_and_phases.lock().global_phase = StepperState::default();
+        self.timers_and_phases.lock().set_global_stop_time_stopped();
+        self.timers_and_phases.lock().sub_phase_start_time = None;
+        self.timers_and_phases.lock().main_phase_start_time = None;
+        self.timers_and_phases.lock().sub_phase = StepperState::default();
+        self.timers_and_phases.lock().main_phase = StepperState::default();
     }
 
     pub fn get_revolutions_per_rotation_cycle(&self) -> f64 {

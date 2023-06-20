@@ -109,44 +109,44 @@ impl Serial {
                                 StepperState::StepgenAgitationError | StepperState::StepgenRotationError | StepperState::EmergencyStop | StepperState::OpenLoad
                                 | StepperState::OverHeat | StepperState::OverCurrent => {
                                     let error = Some(anyhow!("Motor stopped !"));
-                                    timers_and_phases.lock().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().phase = state;
-                                    timers_and_phases.lock().phase_start_time = None;
-                                    timers_and_phases.lock().global_phase = state;
-                                    timers_and_phases.lock().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_global_stop_time_stopped();
+                                    timers_and_phases.lock().sub_phase = state;
+                                    timers_and_phases.lock().sub_phase_start_time = None;
+                                    timers_and_phases.lock().main_phase = state;
+                                    timers_and_phases.lock().main_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, Ordering::SeqCst);
                                 }
                                 StepperState::Finished => {
-                                    timers_and_phases.lock().set_stop_time_motor_stopped();
-                                    timers_and_phases.lock().phase = state;
-                                    timers_and_phases.lock().phase_start_time = None;
-                                    timers_and_phases.lock().global_phase = state;
-                                    timers_and_phases.lock().global_phase_start_time = None;
+                                    timers_and_phases.lock().set_global_stop_time_stopped();
+                                    timers_and_phases.lock().sub_phase = state;
+                                    timers_and_phases.lock().sub_phase_start_time = None;
+                                    timers_and_phases.lock().main_phase = state;
+                                    timers_and_phases.lock().main_phase_start_time = None;
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     is_running.store(false, Ordering::SeqCst);
                                 }
                                 StepperState::StartRotation | StepperState::StartAgitation => {
-                                    timers_and_phases.lock().global_phase = state;
-                                    timers_and_phases.lock().global_phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().main_phase = state;
+                                    timers_and_phases.lock().main_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationRotation => {
                                     let direction = timers_and_phases.lock().rotation_direction.reverse();
                                     timers_and_phases.lock().rotation_direction = direction;
-                                    timers_and_phases.lock().phase = state;
-                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().sub_phase = state;
+                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationAgitation => {
                                     let direction = timers_and_phases.lock().agitation_direction.reverse();
                                     timers_and_phases.lock().agitation_direction = direction;
-                                    timers_and_phases.lock().phase = state;
-                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().sub_phase = state;
+                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
                                 }
                                 _ => {
-                                    timers_and_phases.lock().phase = state;
-                                    timers_and_phases.lock().phase_start_time = Some(Instant::now());
+                                    timers_and_phases.lock().sub_phase = state;
+                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
                                 }
                             }
                         }

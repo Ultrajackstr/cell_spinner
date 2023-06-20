@@ -97,40 +97,40 @@ pub struct Durations {
 
 #[derive(Default)]
 pub struct TimersAndPhases {
-    pub motor_start_time: Option<Instant>,
-    pub motor_stop_time_ms: Option<u64>,
-    pub phase: StepperState,
-    pub phase_start_time: Option<Instant>,
-    pub global_phase: StepperState,
-    pub global_phase_start_time: Option<Instant>,
+    pub global_start_time: Option<Instant>,
+    pub global_stop_time_ms: Option<u64>,
+    pub sub_phase: StepperState,
+    pub sub_phase_start_time: Option<Instant>,
+    pub main_phase: StepperState,
+    pub main_phase_start_time: Option<Instant>,
     pub rotation_direction: Direction,
-    pub agitation_direction: Direction
+    pub agitation_direction: Direction,
 }
 
 impl TimersAndPhases {
-    pub fn get_elapsed_time_since_motor_start_as_millis(&self) -> u64 {
-        match self.motor_start_time {
+    pub fn get_elapsed_time_since_global_start_as_millis(&self) -> u64 {
+        match self.global_start_time {
             Some(start_time) => start_time.elapsed().as_millis() as u64,
             None => 0,
         }
     }
 
-    pub fn get_elapsed_time_since_global_phase_start_as_millis(&self) -> u64 {
-        match self.global_phase_start_time {
+    pub fn get_elapsed_time_since_main_phase_start_as_millis(&self) -> u64 {
+        match self.main_phase_start_time {
             Some(start_time) => start_time.elapsed().as_millis() as u64,
             None => 0,
         }
     }
 
-    pub fn get_elapsed_time_since_phase_start_as_millis(&self) -> u64 {
-        match self.phase_start_time {
+    pub fn get_elapsed_time_since_sub_phase_start_as_millis(&self) -> u64 {
+        match self.sub_phase_start_time {
             Some(start_time) => start_time.elapsed().as_millis() as u64,
             None => 0,
         }
     }
 
-    pub fn set_stop_time_motor_stopped(&mut self) {
-        self.motor_stop_time_ms = Some(self.get_elapsed_time_since_motor_start_as_millis());
+    pub fn set_global_stop_time_stopped(&mut self) {
+        self.global_stop_time_ms = Some(self.get_elapsed_time_since_global_start_as_millis());
     }
 }
 
