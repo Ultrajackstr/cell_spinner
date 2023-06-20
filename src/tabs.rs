@@ -598,7 +598,11 @@ impl TabViewer for Tabs<'_> {
                             // Global progress
                             let global_duration_ms = self.motor.get(tab).unwrap().protocol.global_duration_ms;
                             let current_global_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().global_start_time {
-                                duration.elapsed().as_millis() as u64
+                                if is_running {
+                                    duration.elapsed().as_millis() as u64
+                                } else {
+                                    0
+                                }
                             } else {
                                 0
                             };
