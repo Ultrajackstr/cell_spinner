@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use std::sync::mpsc::{Receiver, Sender};
@@ -81,6 +82,12 @@ impl DurationHelper {
     }
 }
 
+impl Display for DurationHelper {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}d {}h {}min {}s {}ms", self.days, self.hours, self.minutes, self.seconds, self.milliseconds)
+    }
+}
+
 #[derive(Default)]
 pub struct Durations {
     pub duration_of_one_direction_cycle_rotation: DurationHelper,
@@ -93,7 +100,6 @@ pub struct Durations {
     pub pause_post_agitation: DurationHelper,
     pub global_duration: DurationHelper,
 }
-
 
 #[derive(Default)]
 pub struct TimersAndPhases {

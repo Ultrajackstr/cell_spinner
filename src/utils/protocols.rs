@@ -1,8 +1,11 @@
+use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
 use stepgen_new::x64::Stepgen;
 
 use crate::app::{BYTES, MAX_RPM};
 use crate::utils::enums::{Direction, StepMode128};
+use crate::utils::structs::DurationHelper;
 
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct Rotation {
@@ -26,6 +29,15 @@ impl Default for Rotation {
             direction: Direction::Forward,
             pause_before_direction_change_ms: 0,
         }
+    }
+}
+
+impl Display for Rotation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let duration_of_one_direction_cycle_ms = DurationHelper::new_from_milliseconds(self.duration_of_one_direction_cycle_ms);
+        let pause_before_direction_change_ms = DurationHelper::new_from_milliseconds(self.pause_before_direction_change_ms);
+        write!(f, "RPM: {}, Accel: {}, StepMode: {}, Duration: {}, Steps: {}, Direction: {}, Pause: {}",
+               self.rpm, self.acceleration, self.step_mode, duration_of_one_direction_cycle_ms, self.steps_for_one_direction_cycle, self.direction, pause_before_direction_change_ms)
     }
 }
 
@@ -100,5 +112,24 @@ impl Protocol {
         bytes[101..109].copy_from_slice(&self.global_duration_ms.to_le_bytes());
         bytes[109] = b'z';
         bytes
+    }
+}
+
+impl Display for Protocol {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let duration_rotation = DurationHelper::new_from_milliseconds(self.rotation_duration_ms);
+        let duration_agitation = DurationHelper::new_from_milliseconds(self.agitation_duration_ms);
+        let duration_pause_pre_agitation = DurationHelper::new_from_milliseconds(self.pause_pre_agitation_ms);
+        let duration_pause_post_agitation = DurationHelper::new_from_milliseconds(self.pause_post_agitation_ms);
+        let duration_global = DurationHelper::new_from_milliseconds(self.global_duration_ms);
+        writeln!(f, "Protocol:")?;
+        writeln!(f, "Rotation: {}", self.rotation)?;
+        writeln!(f, "Rotation duration: {}", duration_rotation)?;
+        writeln!(f, "Pause pre agitation: {}", duration_pause_pre_agitation)?;
+        writeln!(f, "Agitation: {}", self.agitation)?;
+        writeln!(f, "Agitation duration: {}", duration_agitation)?;
+        writeln!(f, "Pause post agitation: {}", duration_pause_post_agitation)?;
+        write!(f, "Global duration: {}", duration_global)?;
+        Ok(())
     }
 }

@@ -30,6 +30,7 @@ pub struct Tabs<'a> {
     pub current_tab_counter: &'a mut usize,
     pub absolute_tab_counter: &'a mut usize,
     pub can_tab_close: &'a mut bool,
+    pub rotating_tubes: &'a mut DashMap<usize, (RotatingTube, RotatingTube)>,
 }
 
 impl Tabs<'_> {
@@ -42,6 +43,7 @@ impl Tabs<'_> {
         self.added_tabs.push(tab);
         self.refresh_available_serial_ports(tab);
         self.selected_port.insert(tab, self.available_ports[0].clone());
+        self.rotating_tubes.insert(tab, (RotatingTube::new(65.0, THEME.sapphire), RotatingTube::new(65.0, THEME.blue)));
     }
 
     fn remove_tab(&mut self, tab: usize) {
@@ -53,6 +55,7 @@ impl Tabs<'_> {
         self.motor.remove(&tab);
         self.durations.remove(&tab);
         self.added_tabs.retain(|x| x != &tab);
+        self.rotating_tubes.remove(&tab);
     }
 
     fn thread_spawn_new_motor(&mut self, tab: usize, serial_port: String, motor_name: String) {
@@ -669,10 +672,9 @@ impl TabViewer for Tabs<'_> {
                                 });
                             //// Rotation & Agitation widgets
                             ui.horizontal(|ui| {
-                                let diameter = 65.0;
                                 // Rotation
-                                let mut rotation_widget = RotatingTube::new(diameter, THEME.sapphire);
-                                if is_running && current_main_phase == StepperState::StartRotation && current_sub_phase != StepperState::StartPausePreAgitation {
+                                if is_running && current_main_phase == StepperState::StartRotation && current_sub_phase != StepperState::StartPausePreAgitation && current_sub_phase != StepperState::StartPauseRotation {
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.angle_degrees = 0.0;
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().iter().any(|point| {
                                         if point[0] * 1000.0 >= run_time_current_sub_phase_ms as f64 {
@@ -680,7 +682,7 @@ impl TabViewer for Tabs<'_> {
                                             true
                                         } else { false }
                                     });
-                                    rotation_widget.rpm = rpm;
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.rpm = rpm;
                                     let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().rotation_direction;
                                     if direction == Direction::Forward {
                                         self.motor.get_mut(tab).unwrap().angle_rotation += rpm as f32 * 6.0 * frame_time_sec;
@@ -692,13 +694,18 @@ impl TabViewer for Tabs<'_> {
                                     if self.motor.get(tab).unwrap().angle_rotation <= -360.0 {
                                         self.motor.get_mut(tab).unwrap().angle_rotation += 360.0;
                                     }
-                                    rotation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.angle_degrees = self.motor.get(tab).unwrap().angle_rotation;
+                                } else if !is_running {
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.angle_degrees = 0.0;
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.rpm = 0;
+                                } else {
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.rpm = 0;
                                 }
-                                ui.add(rotation_widget).on_hover_text("Rotation");
-                                ui.add_space(140.0 - diameter);
+                                ui.add(self.rotating_tubes.get_mut(tab).unwrap().0).on_hover_text("Rotation");
+                                ui.add_space(140.0 - self.rotating_tubes.get_mut(tab).unwrap().1.diameter);
                                 // Agitation
-                                let mut agitation_widget = RotatingTube::new(diameter, THEME.blue);
-                                if is_running && current_main_phase == StepperState::StartAgitation && current_sub_phase != StepperState::StartPausePostAgitation {
+                                if is_running && current_main_phase == StepperState::StartAgitation && current_sub_phase != StepperState::StartPausePostAgitation && current_sub_phase != StepperState::StartPauseAgitation {
+                                    self.rotating_tubes.get_mut(tab).unwrap().0.angle_degrees = 0.0;
                                     let mut rpm = 0;
                                     self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().iter().any(|point| {
                                         if point[0] * 1000.0 >= run_time_current_sub_phase_ms as f64 {
@@ -706,7 +713,7 @@ impl TabViewer for Tabs<'_> {
                                             true
                                         } else { false }
                                     });
-                                    agitation_widget.rpm = rpm;
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.rpm = rpm;
                                     let direction = self.motor.get(tab).unwrap().timers_and_phases.lock().agitation_direction;
                                     if direction == Direction::Forward {
                                         self.motor.get_mut(tab).unwrap().angle_agitation += rpm as f32 * 6.0 * frame_time_sec;
@@ -718,9 +725,14 @@ impl TabViewer for Tabs<'_> {
                                     if self.motor.get(tab).unwrap().angle_agitation <= -360.0 {
                                         self.motor.get_mut(tab).unwrap().angle_agitation += 360.0;
                                     }
-                                    agitation_widget.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.angle_degrees = self.motor.get(tab).unwrap().angle_agitation;
+                                } else if !is_running {
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.angle_degrees = 0.0;
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.rpm = 0;
+                                } else {
+                                    self.rotating_tubes.get_mut(tab).unwrap().1.rpm = 0;
                                 }
-                                ui.add(agitation_widget).on_hover_text("Agitation");
+                                ui.add(self.rotating_tubes.get_mut(tab).unwrap().1).on_hover_text("Agitation");
                             });
                         });
                         // Schematic of protocol

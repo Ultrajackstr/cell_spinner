@@ -5,6 +5,7 @@ use egui::Direction::TopDown;
 use crate::app::THEME;
 use crate::utils::enums::Direction;
 
+#[derive(Copy, Clone)]
 pub struct RotatingTube {
     pub diameter: f32,
     pub direction: Direction,

@@ -126,18 +126,18 @@ impl Motor {
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(&self.protocol.protocol_as_bytes());
         tracing::info!("Motor {} started.", self.name);
-        tracing::info!("Protocol: {:?}", self.protocol);
+        tracing::info!("{}", self.protocol);
     }
 
     pub fn stop_motor(&mut self, message_tx: Option<Sender<Message>>) {
         self.is_running.store(false, Ordering::SeqCst);
-        self.serial.send_bytes(&[b'x']);
+        self.serial.send_bytes(b"stop");
         self.timers_and_phases.lock().set_global_stop_time_stopped();
         self.timers_and_phases.lock().sub_phase_start_time = None;
         self.timers_and_phases.lock().main_phase_start_time = None;
         self.timers_and_phases.lock().sub_phase = StepperState::default();
         self.timers_and_phases.lock().main_phase = StepperState::default();
-        let message = Message::new(ToastKind::Info, &format!("The motor {} has been stopped.", self.name), None, Some(self.name.clone()), 3, false);
+        let message = Message::new(ToastKind::Info, &format!("{} has been stopped.", self.name), None, Some(self.name.clone()), 3, false);
         if let Some(message_tx) = message_tx {
             message_tx.send(message).unwrap();
         }

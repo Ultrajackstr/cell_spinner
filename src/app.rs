@@ -21,6 +21,7 @@ use crate::utils::helpers::send_toast;
 use crate::utils::motor::Motor;
 use crate::utils::protocols::Protocol;
 use crate::utils::structs::{Channels, Durations, FontAndButtonSize, Message, WindowsState};
+use crate::utils::widget_rotating_tube::RotatingTube;
 
 pub const FONT_BUTTON_SIZE: FontAndButtonSize = FontAndButtonSize {
     font_table: 13.0,
@@ -68,6 +69,7 @@ pub struct CellSpinner {
     motor_name: DashMap<usize, String>,
     durations: DashMap<usize, Durations>,
     motor: Arc<DashMap<usize, Motor>>,
+    rotating_tubes: DashMap<usize,(RotatingTube, RotatingTube)>,
     // Tabs
     current_tab_counter: usize,
     tree: Tree<usize>,
@@ -106,6 +108,7 @@ impl Default for CellSpinner {
             motor_name: Default::default(),
             path_config: home_dir().unwrap(),
             durations: Default::default(),
+            rotating_tubes: Default::default(),
         }
     }
 }
@@ -202,6 +205,7 @@ impl CellSpinner {
         self.selected_port.insert(tab, available_ports[0].clone());
         self.available_ports = available_ports;
         self.promise_serial_connect.insert(tab, None);
+        self.rotating_tubes.insert(tab, (RotatingTube::new(65.0, THEME.sapphire), RotatingTube::new(65.0, THEME.blue)));
     }
 
     /// Error log window.
@@ -511,6 +515,7 @@ impl eframe::App for CellSpinner {
                     current_tab_counter: &mut self.current_tab_counter,
                     absolute_tab_counter: &mut self.absolute_tab_counter,
                     can_tab_close: &mut self.can_tab_close,
+                    rotating_tubes: &mut self.rotating_tubes,
                 });
             added_nodes.drain(..).for_each(|node| {
                 self.tree.set_focused_node(node);

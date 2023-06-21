@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use anyhow::{anyhow, bail, Error};
 use egui_toast::ToastKind;
 use parking_lot::Mutex;
-use serialport::{ClearBuffer, DataBits, FlowControl, Parity, SerialPort, StopBits};
+use serialport::{DataBits, FlowControl, Parity, SerialPort, StopBits};
 
 use crate::app::THREAD_SLEEP;
 use crate::utils::enums::StepperState;
@@ -39,26 +39,19 @@ impl Serial {
             .flow_control(FlowControl::None)
             .timeout(Duration::from_millis(2000))
             .open()?;
-        let mut buf: [u8; 3];
-        system_port_unwrapped.clear(ClearBuffer::All)?;
-        // First send the "bye!" command to be sure the RP-Pico is initialized
-        system_port_unwrapped.write_all(b"bye!")?;
-        thread::sleep(Duration::from_millis(200));
-        system_port_unwrapped.clear(ClearBuffer::All)?;
-        buf = [0u8; 3];
+        let mut buf = [0u8; 3];
         let mut counter = 0;
-        // Write "hi?" to serial port
-        system_port_unwrapped.write_all(b"hi?")?;
+        // Write "helo" to serial port
         loop {
+            system_port_unwrapped.write_all(b"helo")?;
             system_port_unwrapped.read_exact(&mut buf)?;
             if buf == [b'o', b'k', b'!'] {
-                system_port_unwrapped.clear(ClearBuffer::All)?;
                 break;
             } else {
                 counter += 1;
-                if counter >= 10 {
-                    system_port_unwrapped.clear(ClearBuffer::All)?;
-                    bail!("Raspberry connection failed after 10 retries");
+                tracing::info!("Raspberry connection failed, retrying... ({})", counter);
+                if counter >= 15 {
+                    bail!("Raspberry connection failed after 15 retries");
                 }
                 thread::sleep(Duration::from_millis(500));
             }
@@ -72,7 +65,6 @@ impl Serial {
 
     pub fn disconnect(&self) {
         if let Some(mut port) = self.port.lock().take() {
-            port.clear(ClearBuffer::All).ok();
             port.write_all(b"bye!").ok();
         }
     }
@@ -102,9 +94,7 @@ impl Serial {
                             let origin = Some(motor_name.clone());
                             let message = state.to_string();
                             match state {
-                                StepperState::Invalid => {
-                                    port.lock().as_mut().unwrap().clear(ClearBuffer::All).ok();
-                                }
+                                StepperState::Invalid => {}
                                 StepperState::CommandReceived => {}
                                 StepperState::StepgenAgitationError | StepperState::StepgenRotationError | StepperState::EmergencyStop | StepperState::OpenLoad
                                 | StepperState::OverHeat | StepperState::OverCurrent => {
@@ -165,7 +155,6 @@ impl Serial {
 
     pub fn send_bytes(&self, bytes: &[u8]) {
         if let Some(port) = self.port.lock().as_mut() {
-            port.clear(ClearBuffer::All).ok();
             port.write_all(bytes).ok();
         }
     }
