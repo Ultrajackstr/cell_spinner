@@ -137,7 +137,7 @@ impl Motor {
         self.timers_and_phases.lock().main_phase_start_time = None;
         self.timers_and_phases.lock().sub_phase = StepperState::default();
         self.timers_and_phases.lock().main_phase = StepperState::default();
-        let message = Message::new(ToastKind::Info, &format!("{} has been stopped.", self.name), None, Some(self.name.clone()), 3, false);
+        let message = Message::new(ToastKind::Info, &format!("{} has been stopped.", self.name), None, None, 3, false);
         if let Some(message_tx) = message_tx {
             message_tx.send(message).unwrap();
         }
