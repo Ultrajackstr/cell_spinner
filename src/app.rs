@@ -69,7 +69,7 @@ pub struct CellSpinner {
     motor_name: DashMap<usize, String>,
     durations: DashMap<usize, Durations>,
     motor: Arc<DashMap<usize, Motor>>,
-    rotating_tubes: DashMap<usize,(RotatingTube, RotatingTube)>,
+    rotating_tubes: DashMap<usize, (RotatingTube, RotatingTube)>,
     // Tabs
     current_tab_counter: usize,
     tree: Tree<usize>,
@@ -165,6 +165,21 @@ impl CellSpinner {
                 self.error_log.insert(0, text.clone());
                 self.info_message_is_waiting = false;
                 send_toast(&self.channels.toast_tx, ToastKind::Error, text, message.duration);
+                if message.message.contains("Error while reading serial port") { // Hack to disconnect the motor if the serial port is disconnected
+                    let split: Vec<&str> = message.message.split("Error while reading serial port ").collect();
+                    let port = split[1].to_string();
+                    // Find the tab with the port
+                    let mut tab: Option<usize> = None;
+                    for data in self.selected_port.iter() {
+                        if data.value() == &port {
+                            tab = Some(*data.key());
+                            break;
+                        }
+                    }
+                    if let Some(tab) = tab {
+                        self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
+                    }
+                }
             }
             _ => {
                 self.info_message_is_waiting = message.is_waiting;
@@ -488,7 +503,7 @@ impl eframe::App for CellSpinner {
         egui::CentralPanel::default().show(ctx, |ui| {
             let mut added_nodes = vec![];
             let show_close = self.current_tab_counter != 1;
-            let show_add = self.current_tab_counter < 5;
+            let show_add = self.current_tab_counter < 8;
             egui_dock::DockArea::new(&mut self.tree)
                 .style({
                     let mut style = Style::from_egui(ctx.style().as_ref());
