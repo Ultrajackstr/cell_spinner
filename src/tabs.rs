@@ -265,7 +265,7 @@ impl TabViewer for Tabs<'_> {
                             ui.label(RichText::new("Rotation ⬇️").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
                             // Rotation progress bar
-                            let rotation_duration_ms = self.motor.get(tab).unwrap().protocol.rotation_duration_ms;
+                            let rotation_duration_with_pause_pre_agitation_ms = self.motor.get(tab).unwrap().protocol.rotation_duration_ms + self.motor.get(tab).unwrap().protocol.pause_pre_agitation_ms;
                             let current_rotation_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase_start_time {
                                 if current_main_phase == StepperState::StartRotation {
                                     duration.elapsed().as_millis() as u64
@@ -275,7 +275,7 @@ impl TabViewer for Tabs<'_> {
                             } else {
                                 0
                             };
-                            let progress = current_rotation_duration_ms as f32 / rotation_duration_ms as f32;
+                            let progress = current_rotation_duration_ms as f32 / rotation_duration_with_pause_pre_agitation_ms as f32;
                             ui.add(egui::ProgressBar::new(progress).show_percentage())
                                 .on_hover_text("Rotation progress");
                         });
@@ -434,7 +434,7 @@ impl TabViewer for Tabs<'_> {
                             ui.label(RichText::new("Agitation ⬇️").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large));
                             ui.separator();
                             // Agitation progress bar
-                            let agitation_duration_ms = self.motor.get(tab).unwrap().protocol.agitation_duration_ms;
+                            let agitation_duration_with_pause_post_agitation_ms = self.motor.get(tab).unwrap().protocol.agitation_duration_ms + self.motor.get(tab).unwrap().protocol.pause_post_agitation_ms;
                             let current_agitation_duration_ms = if let Some(duration) = self.motor.get(tab).unwrap().timers_and_phases.lock().main_phase_start_time {
                                 if current_main_phase == StepperState::StartAgitation {
                                     duration.elapsed().as_millis() as u64
@@ -444,7 +444,7 @@ impl TabViewer for Tabs<'_> {
                             } else {
                                 0
                             };
-                            let progress = current_agitation_duration_ms as f32 / agitation_duration_ms as f32;
+                            let progress = current_agitation_duration_ms as f32 / agitation_duration_with_pause_post_agitation_ms as f32;
                             ui.add(egui::ProgressBar::new(progress).show_percentage())
                                 .on_hover_text("Agitation progress");
                         });
