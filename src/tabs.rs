@@ -143,7 +143,7 @@ impl TabViewer for Tabs<'_> {
                             if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut()))
                                 .on_hover_text("Change the name of the motor")
                                 .lost_focus() {
-                                tracing::info!("Changed motor name {} to {}", self.motor.get(tab).unwrap().name, self.motor_name.get(tab).unwrap().value());
+                                tracing::info!("{}: Changed name: {} to {}",self.motor.get(tab).unwrap().serial.port_name, self.motor.get(tab).unwrap().name, self.motor_name.get(tab).unwrap().value());
                                 self.motor.get_mut(tab).unwrap().name = self.motor_name.get(tab).unwrap().to_string();
                             }
                         });
@@ -735,22 +735,6 @@ impl TabViewer for Tabs<'_> {
                                 ui.add(self.rotating_tubes.get_mut(tab).unwrap().1).on_hover_text("Agitation");
                             });
                         });
-                        // Schematic of protocol
-                        // ui.vertical_centered(|ui| {
-                        //     ui.horizontal(|ui| {
-                        //         ui.label(RichText::new("Rotation").color(THEME.sapphire).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for cycle duration ➡️ Pause\nDirection 2 for cycle duration ➡️ Pause\nRepeat for rotation duration");
-                        //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                        //         ui.label(RichText::new("Pause pre-agitation").size(FONT_BUTTON_SIZE.font_large));
-                        //     });
-                        //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                        //     ui.horizontal(|ui| {
-                        //         ui.label(RichText::new("Agitation").color(THEME.blue).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("Direction 1 for agitation duration ➡️ Pause\nDirection 2 for agitation duration ➡️ Pause\nRepeat for rotation duration");
-                        //         ui.label(RichText::new("➡️").size(FONT_BUTTON_SIZE.font_large));
-                        //         ui.label(RichText::new("Pause post-agitation").size(FONT_BUTTON_SIZE.font_large));
-                        //     });
-                        //     ui.label(RichText::new("⬇️").size(FONT_BUTTON_SIZE.font_large));
-                        //     ui.label(RichText::new("Repeat for global duration").color(THEME.lavender).size(FONT_BUTTON_SIZE.font_large)).on_hover_text("This duration supersedes all other durations.");
-                        // });
                     });
                 });
             });
@@ -829,11 +813,13 @@ impl TabViewer for Tabs<'_> {
             self.channels.message_tx.as_ref().unwrap().send(message).ok();
             return false;
         }
+        let motor_name = self.motor.get(tab).unwrap().name.clone();
         *self.current_tab_counter -= 1;
         // Remove from the added tabs.
         self.added_tabs.retain(|x| *x != *tab);
         self.remove_tab(*tab);
         *self.can_tab_close = true;
+        tracing::info!("Closed tab {} of {}", tab, motor_name);
         true
     }
 
@@ -842,5 +828,6 @@ impl TabViewer for Tabs<'_> {
         *self.current_tab_counter += 1;
         *self.absolute_tab_counter += 1;
         self.init_tab(*self.absolute_tab_counter);
+        tracing::info!("Added tab {} with {}", self.absolute_tab_counter, self.motor.get(self.absolute_tab_counter).unwrap().name);
     }
 }
