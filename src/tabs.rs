@@ -169,7 +169,7 @@ impl TabViewer for Tabs<'_> {
                 ui.separator();
                 ui.horizontal_centered(|ui| {
                     // Button to send the parameters to the motor and run it. Focus is check to prevent the button from being pressed when the user is typing in the text field.
-                    ui.add_enabled_ui(is_connected && !is_running && self.main_context.memory(|mem| mem.focus().is_none() && self.motor.get(tab).unwrap().protocol.global_duration_ms != 0), |ui| {
+                    ui.add_enabled_ui(is_connected && !is_running && self.main_context.memory(|mem| mem.focus().is_none()), |ui| { // && self.motor.get(tab).unwrap().protocol.global_duration_ms != 0
                         let run_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("Run")
                             .color(Color32::WHITE)).fill(THEME.green))
                             .on_hover_text("Right click to start all motors");

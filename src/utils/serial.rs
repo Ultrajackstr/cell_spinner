@@ -78,7 +78,8 @@ impl Serial {
             while is_running.load(Ordering::SeqCst) {
                 let mut buf: [u8; 3];
                 // Check if there is a byte to read
-                let is_byte = match port.lock().as_ref().unwrap().bytes_to_read() {
+                let result = port.lock().as_ref().unwrap().bytes_to_read();
+                let is_byte = match result {
                     Ok(n) => n,
                     Err(err) => {
                         is_running.store(false, Ordering::SeqCst);
@@ -90,6 +91,7 @@ impl Serial {
                             lock.main_phase = StepperState::Invalid;
                             lock.main_phase_start_time = None;
                         }
+                        port.lock().take();
                         let error = Some(anyhow!(err));
                         let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name.clone()), 5, false);
                         message_tx.as_ref().unwrap().send(message).unwrap();
@@ -98,13 +100,29 @@ impl Serial {
                 };
                 if is_byte != 0 {
                     buf = [0u8; 3];
-                    match port.lock().as_mut().unwrap().read_exact(&mut buf) {
+                    let read_exact_result = port.lock().as_mut().unwrap().read_exact(&mut buf);
+                    match read_exact_result {
                         Ok(_) => {
                             let state: StepperState = StepperState::from(&buf);
                             let origin = Some(motor_name.clone());
                             let message = state.to_string();
                             match state {
-                                StepperState::Invalid => {}
+                                StepperState::Invalid => {
+                                    is_running.store(false, Ordering::SeqCst);
+                                    {
+                                        let mut lock = timers_and_phases.lock();
+                                        lock.set_global_stop_time_stopped();
+                                        lock.sub_phase = StepperState::Invalid;
+                                        lock.sub_phase_start_time = None;
+                                        lock.main_phase = StepperState::Invalid;
+                                        lock.main_phase_start_time = None;
+                                    }
+                                    port.lock().take();
+                                    let error = Some(anyhow!("Invalid state received. Disconnecting..."));
+                                    let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name), 5, false);
+                                    message_tx.as_ref().unwrap().send(message).unwrap();
+                                    return;
+                                }
                                 StepperState::CommandReceived => {}
                                 StepperState::StepgenAgitationError | StepperState::StepgenRotationError | StepperState::EmergencyStop | StepperState::OpenLoad
                                 | StepperState::OverHeat | StepperState::OverCurrent => {
@@ -170,6 +188,7 @@ impl Serial {
                                 lock.main_phase = StepperState::Invalid;
                                 lock.main_phase_start_time = None;
                             }
+                            port.lock().take();
                             let error = Some(anyhow!(err));
                             let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name), 5, false);
                             message_tx.as_ref().unwrap().send(message).unwrap();
