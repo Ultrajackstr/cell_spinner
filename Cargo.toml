@@ -1,6 +1,6 @@
 [package]
 name = "cell_spinner"
-version = "0.9.75"
+version = "0.9.76"
 authors = ["Giacomo Gropplero <giacomo@gropplero.com>"]
 edition = "2021"
 rust-version = "1.65"
