@@ -45,6 +45,7 @@ pub const THEME: Theme = Theme {
 
 // pub const SCHEME: &[u8] = include_bytes!("./resources/schematic/protocol.png");
 
+// TODO: Check if some DashMaps can be replced by HashMaps to prevent deadlocks
 pub struct CellSpinner {
     app_version: String,
     is_first_frame: bool,
