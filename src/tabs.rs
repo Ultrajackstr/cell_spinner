@@ -87,7 +87,9 @@ impl Tabs<'_> {
             Ok(ports) => {
                 let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
                     .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
-                if let Some(selected_port) = self.selected_port.get(&tab) {
+                let is_selected_port = self.selected_port.get(&tab).is_some();
+                if is_selected_port { // if let Some produces a deadlock here because of get and insert.
+                    let selected_port = self.selected_port.get(&tab).unwrap().clone();
                     if !available_ports.contains(&selected_port) {
                         self.selected_port.insert(tab, available_ports.get(0).unwrap_or(&"".to_string()).clone());
                     }
