@@ -48,7 +48,7 @@ impl Tabs<'_> {
 
     fn remove_tab(&mut self, tab: usize) {
         self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
-        self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
+        self.motor.get(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         self.selected_port.remove(&tab);
         self.promise_serial_connect.remove(&tab);
         self.motor_name.remove(&tab);
@@ -107,7 +107,7 @@ impl Tabs<'_> {
 
     pub fn disconnect(&mut self, tab: usize) {
         self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
-        self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
+        self.motor.get(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         // self.selected_port.get_mut(&tab).unwrap().clear();
         self.refresh_available_serial_ports(tab);
     }
@@ -205,10 +205,10 @@ impl TabViewer for Tabs<'_> {
                         let stop_response = ui.add_sized(egui::vec2(FONT_BUTTON_SIZE.button_default.x, FONT_BUTTON_SIZE.button_default.y * 2.0), egui::Button::new(RichText::new("STOP MOTOR").color(Color32::WHITE)).fill(THEME.red))
                             .on_hover_text("Right click to stop all motors");
                         if stop_response.clicked() {
-                            self.motor.get_mut(tab).unwrap().stop_motor(self.channels.message_tx.clone());
+                            self.motor.get(tab).unwrap().stop_motor(self.channels.message_tx.clone());
                         } else if stop_response.secondary_clicked() {
                             // Stop all running motors
-                            self.motor.iter_mut().for_each(|mut motor| {
+                            self.motor.iter().for_each(|motor| {
                                 if motor.get_is_running() {
                                     motor.stop_motor(self.channels.message_tx.clone());
                                 }
@@ -224,7 +224,7 @@ impl TabViewer for Tabs<'_> {
                     .clicked() {
                     let message = Message::new(ToastKind::Warning, "Emergency stop", None, Some(self.motor.get(tab).unwrap().name.clone()), 5, false);
                     self.channels.message_tx.as_ref().unwrap().send(message).ok();
-                    self.motor.iter_mut().for_each(|mut motor| {
+                    self.motor.iter().for_each(|motor| {
                         motor.stop_motor(self.channels.message_tx.clone());
                         motor.disconnect(self.channels.message_tx.clone());
                     });
@@ -234,28 +234,45 @@ impl TabViewer for Tabs<'_> {
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
                 let run_time_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_start_as_millis();
                 let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().global_stop_time_ms;
-                if run_time_ms != 0 && is_stop_time.is_none() {
-                    let duration = DurationHelper::new_from_milliseconds(run_time_ms);
-                    // Run time text.
-                    ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_large));
-                } else if is_stop_time.is_some() {
-                    let stop_time_ms = is_stop_time.unwrap();
-                    let duration = DurationHelper::new_from_milliseconds(stop_time_ms);
-                    // Run time text.
-                    ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_large));
-                    ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_large));
-                } else {
-                    ui.label(RichText::new("Run time ➡️ None").size(FONT_BUTTON_SIZE.font_large));
-                }
+                ui.vertical_centered(|ui| {
+                    // Run time
+                    ui.horizontal(|ui| {
+                        if run_time_ms != 0 && is_stop_time.is_none() {
+                            let duration = DurationHelper::new_from_milliseconds(run_time_ms);
+                            // Run time text.
+                            ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        } else if is_stop_time.is_some() {
+                            let stop_time_ms = is_stop_time.unwrap();
+                            let duration = DurationHelper::new_from_milliseconds(stop_time_ms);
+                            // Run time text.
+                            ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        } else {
+                            ui.label(RichText::new("Run time ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        }
+                    });
+                    // Expected end date
+                    ui.horizontal(|ui| {
+                        let expected_end_date = self.motor.get(tab).unwrap().timers_and_phases.lock().expected_end_date;
+                        if let Some(expected_end_date) = expected_end_date {
+                            let expected_end_date = expected_end_date;
+                            let expected_end_date = expected_end_date.format("%Y/%m/%d %H:%M:%S").to_string();
+                            ui.label(RichText::new("Expected end date ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(expected_end_date).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        } else {
+                            ui.label(RichText::new("Expected end date ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        }
+                    });
+                });
             });
         });
         ui.separator();
@@ -626,25 +643,35 @@ impl TabViewer for Tabs<'_> {
                         ui.add_enabled_ui(!is_running, |ui| {
                             // Global duration of the protocol
                             ui.horizontal(|ui| {
+                                let mut expected_end_needs_update = false;
                                 let color = if self.motor.get(tab).unwrap().protocol.global_duration_ms == 0 { THEME.red } else { THEME.text };
                                 ui.label(RichText::new("Global duration:").color(color).size(15.0)).on_hover_text("Global duration of the protocol.");
                                 ui.horizontal(|ui| {
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.days).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
+                                        expected_end_needs_update = true;
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.hours).suffix(" h").clamp_range(0..=23)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
+                                        expected_end_needs_update = true;
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.minutes).suffix(" min").clamp_range(0..=59)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
+                                        expected_end_needs_update = true;
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.seconds).suffix(" s").clamp_range(0..=59)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
+                                        expected_end_needs_update = true;
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.milliseconds).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
+                                        expected_end_needs_update = true;
                                     }
                                 });
+                                if expected_end_needs_update {
+                                    self.motor.get(tab).unwrap().calculate_expected_end_date();
+                                    expected_end_needs_update = false;
+                                }
                             });
                         });
                         ui.separator();

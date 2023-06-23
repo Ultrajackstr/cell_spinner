@@ -45,7 +45,7 @@ pub const THEME: Theme = Theme {
 
 // pub const SCHEME: &[u8] = include_bytes!("./resources/schematic/protocol.png");
 
-// TODO: Check if some DashMaps can be replced by HashMaps to prevent deadlocks
+// TODO: Check if some DashMaps can be replaced by HashMaps to prevent deadlocks
 pub struct CellSpinner {
     app_version: String,
     is_first_frame: bool,
@@ -285,7 +285,7 @@ impl CellSpinner {
                 ui.horizontal(|ui| {
                     // Disconnect button.
                     if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("DISCONNECT ALL").color(Color32::WHITE)).fill(THEME.red)).clicked() {
-                        self.motor.iter_mut().for_each(|mut motor| motor.disconnect(self.channels.message_tx.clone()));
+                        self.motor.iter().for_each(|motor| motor.disconnect(self.channels.message_tx.clone()));
                         self.allowed_to_close = true;
                     }
                     ui.separator();
@@ -369,6 +369,7 @@ impl CellSpinner {
                 self.motor.iter().for_each(|motor| {
                     motor.generate_graph_rotation();
                     motor.generate_graph_agitation();
+                    motor.calculate_expected_end_date();
                 });
             } else {
                 self.motor.get_mut(tab).unwrap().import_protocol(protocol)?;
@@ -390,6 +391,7 @@ impl CellSpinner {
                 self.durations.get_mut(tab).unwrap().global_duration.self_from_milliseconds(self.motor.get(tab).unwrap().protocol.global_duration_ms);
                 self.motor.get(tab).unwrap().generate_graph_rotation();
                 self.motor.get(tab).unwrap().generate_graph_agitation();
+                self.motor.get(tab).unwrap().calculate_expected_end_date();
             }
             Ok(())
         };

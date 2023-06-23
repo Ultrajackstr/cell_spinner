@@ -5,6 +5,7 @@ use std::thread;
 use std::time::Instant;
 
 use anyhow::{anyhow, bail, Error};
+use chrono::Local;
 use egui_toast::ToastKind;
 use fugit::TimerInstantU64;
 use parking_lot::Mutex;
@@ -69,6 +70,7 @@ impl Motor {
         motor.protocol = protocol;
         motor.graph = graph;
         motor.steps_per_cycle = steps_per_cycle;
+        motor.calculate_expected_end_date();
         Ok(motor)
     }
 
@@ -80,7 +82,14 @@ impl Motor {
         self.is_running.load(Ordering::SeqCst)
     }
 
-    pub fn disconnect(&mut self, message_tx: Option<Sender<Message>>) {
+    pub fn calculate_expected_end_date(&self) {
+        let global_duration = self.protocol.global_duration_ms;
+        let date_now = Local::now();
+        let date_expected_end = date_now + chrono::Duration::milliseconds(global_duration as i64);
+        self.timers_and_phases.lock().expected_end_date = Some(date_expected_end);
+    }
+
+    pub fn disconnect(&self, message_tx: Option<Sender<Message>>) {
         if self.is_running.load(Ordering::SeqCst) {
             self.stop_motor(message_tx.clone());
         }
@@ -89,7 +98,7 @@ impl Motor {
         if let Some(message_tx) = message_tx {
             message_tx.send(message).unwrap();
         }
-        self.serial = Serial::default();
+        // self.serial = Serial::default();
     }
 
     pub fn start_motor(&mut self, message_tx: Option<Sender<Message>>) {
@@ -128,11 +137,12 @@ impl Motor {
         self.angle_agitation = 0.0;
         self.serial.listen_to_serial_port(self.name.clone(), &self.is_running, &self.timers_and_phases, message_tx);
         self.serial.send_bytes(&self.protocol.protocol_as_bytes());
+        self.calculate_expected_end_date();
         tracing::info!("Motor {} started.", self.name);
         tracing::info!("{}", self.protocol);
     }
 
-    pub fn stop_motor(&mut self, message_tx: Option<Sender<Message>>) {
+    pub fn stop_motor(&self, message_tx: Option<Sender<Message>>) {
         self.is_running.store(false, Ordering::SeqCst);
         self.serial.send_bytes(b"stop");
         {

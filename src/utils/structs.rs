@@ -5,6 +5,7 @@ use std::sync::mpsc::{Receiver, Sender};
 use std::time::Instant;
 
 use anyhow::Error;
+use chrono::{DateTime, Local};
 use egui_toast::{Toast, ToastKind};
 
 use crate::utils::enums::{Direction, StepperState};
@@ -111,6 +112,7 @@ pub struct TimersAndPhases {
     pub main_phase_start_time: Option<Instant>,
     pub rotation_direction: Direction,
     pub agitation_direction: Direction,
+    pub expected_end_date: Option<DateTime<Local>>,
 }
 
 impl TimersAndPhases {
