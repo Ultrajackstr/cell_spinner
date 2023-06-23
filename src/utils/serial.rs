@@ -205,8 +205,12 @@ impl Serial {
     }
 
     pub fn send_bytes(&self, bytes: &[u8]) {
-        if let Some(port) = self.port.lock().as_mut() {
-            port.write_all(bytes).ok();
+        let now = Instant::now();
+        let future = now + Duration::from_millis(THREAD_SLEEP + 5);
+        if let Some(mut lock) = self.port.try_lock_until(future) {
+            if let Some(port) = lock.as_mut() {
+                port.write_all(bytes).ok();
+            }
         }
     }
 }
