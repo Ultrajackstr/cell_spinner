@@ -76,6 +76,9 @@ impl Serial {
         let port_name = self.port_name.clone();
         thread::spawn(move || {
             while is_running.load(Ordering::SeqCst) {
+                if port.lock().is_none() {
+                    return;
+                }
                 let mut buf: [u8; 3];
                 // Check if there is a byte to read
                 let result = port.lock().as_ref().unwrap().bytes_to_read();
