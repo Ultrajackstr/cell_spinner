@@ -21,10 +21,10 @@ pub struct Serial {
 }
 
 impl Serial {
-    pub fn new(port_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+    pub fn new(port_name: &str, _already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let port = Self::connect_to_serial_port(port_name)?;
         let port = Arc::new(port);
-        already_connected_ports.lock().push(port_name.into());
+        // already_connected_ports.lock().push(port_name.into());
         Ok(Self {
             port_name: port_name.into(),
             port,

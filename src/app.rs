@@ -13,7 +13,6 @@ use egui::{Color32, FontFamily, FontId, RichText, Sense};
 use egui::TextStyle::{Body, Button, Heading, Monospace, Small};
 use egui_dock::{Style, Tree};
 use egui_toast::{Toast, ToastKind, Toasts};
-use parking_lot::Mutex;
 use rfd::FileDialog;
 
 use crate::tabs::Tabs;
@@ -63,7 +62,7 @@ pub struct CellSpinner {
     // Serial
     selected_port: DashMap<usize, String>,
     available_ports: Vec<String>,
-    already_connected_ports: Arc<Mutex<Vec<String>>>,
+    // already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
     //Motor_name map : Only to prevent loss of focus while changing the name of the motor...
     motor_name: DashMap<usize, String>,
@@ -98,7 +97,7 @@ impl Default for CellSpinner {
             promise_serial_connect: Arc::new(Default::default()),
             selected_port: DashMap::new(),
             available_ports: vec![],
-            already_connected_ports: Arc::new(Mutex::new(vec![])),
+            // already_connected_ports: Arc::new(Mutex::new(vec![])),
             current_tab_counter: 1,
             tree: Tree::new(vec![1]),
             absolute_tab_counter: 1,
@@ -192,8 +191,8 @@ impl CellSpinner {
         self.motor_name.insert(tab, format!("Motor {}", tab));
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {
-                let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
-                    .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
+                let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone()).collect();
+                    // .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
                 available_ports
             }
             Err(err) => {
@@ -504,7 +503,7 @@ impl eframe::App for CellSpinner {
                     main_context: ctx.clone(),
                     // frame,
                     available_ports: &mut self.available_ports,
-                    already_connected_ports: &mut self.already_connected_ports,
+                    // already_connected_ports: &mut self.already_connected_ports,
                     selected_port: &mut self.selected_port,
                     motor_name: &mut self.motor_name,
                     motor: &mut self.motor,
