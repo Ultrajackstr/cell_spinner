@@ -19,7 +19,7 @@ pub struct Tabs<'a> {
     pub main_context: egui::Context,
     // pub frame: &'a mut Frame,
     pub available_ports: &'a mut Vec<String>,
-    // pub already_connected_ports: &'a mut Arc<Mutex<Vec<String>>>,
+    pub already_connected_ports: &'a mut Arc<Mutex<Vec<String>>>,
     pub selected_port: &'a mut DashMap<usize, String>,
     pub motor_name: &'a mut DashMap<usize, String>,
     pub motor: &'a mut Arc<DashMap<usize, Motor>>,
@@ -47,7 +47,7 @@ impl Tabs<'_> {
     }
 
     fn remove_tab(&mut self, tab: usize) {
-        // self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
+        self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
         self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         self.selected_port.remove(&tab);
         self.promise_serial_connect.remove(&tab);
@@ -63,8 +63,7 @@ impl Tabs<'_> {
         let promise = self.promise_serial_connect.clone();
         let motors = self.motor.clone();
         let channels = self.channels.message_tx.clone();
-        // let already_connected_ports = self.already_connected_ports.clone();
-        let already_connected_ports = Arc::new(Mutex::new(vec![]));
+        let already_connected_ports = self.already_connected_ports.clone();
         let protocol = self.motor.get(&tab).unwrap().protocol;
         let graph = self.motor.get(&tab).unwrap().graph.clone();
         let steps_per_cycle = self.motor.get(&tab).unwrap().steps_per_cycle.clone();
@@ -86,8 +85,8 @@ impl Tabs<'_> {
     fn refresh_available_serial_ports(&mut self, tab: usize) {
         let available_ports = match serialport::available_ports() {
             Ok(ports) => {
-                let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone()).collect();
-                    // .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
+                let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
+                    .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
                 available_ports
             }
             Err(err) => {
@@ -100,8 +99,8 @@ impl Tabs<'_> {
         self.selected_port.insert(tab, self.available_ports[0].clone());
     }
 
-    fn disconnect(&mut self, tab: usize) {
-        // self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
+    pub fn disconnect(&mut self, tab: usize) {
+        self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
         self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
         self.selected_port.get_mut(&tab).unwrap().clear();
         self.refresh_available_serial_ports(tab);

@@ -21,10 +21,10 @@ pub struct Serial {
 }
 
 impl Serial {
-    pub fn new(port_name: &str, _already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
+    pub fn new(port_name: &str, already_connected_ports: Arc<Mutex<Vec<String>>>) -> Result<Self, Error> {
         let port = Self::connect_to_serial_port(port_name)?;
         let port = Arc::new(port);
-        // already_connected_ports.lock().push(port_name.into());
+        already_connected_ports.lock().push(port_name.into());
         Ok(Self {
             port_name: port_name.into(),
             port,
@@ -94,9 +94,9 @@ impl Serial {
                             lock.main_phase = StepperState::Invalid;
                             lock.main_phase_start_time = None;
                         }
-                        port.lock().take();
+                        // port.lock().take();
                         let error = Some(anyhow!(err));
-                        let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name.clone()), 5, false);
+                        let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {} - ⚠️YOU SHOULD RECONNECT⚠️", port_name), error, Some(motor_name.clone()), 5, false);
                         message_tx.as_ref().unwrap().send(message).unwrap();
                         return;
                     }
@@ -120,9 +120,9 @@ impl Serial {
                                         lock.main_phase = StepperState::Invalid;
                                         lock.main_phase_start_time = None;
                                     }
-                                    port.lock().take();
+                                    // port.lock().take();
                                     let error = Some(anyhow!("Invalid state received. Disconnecting..."));
-                                    let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name), 5, false);
+                                    let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {} - ⚠️YOU SHOULD RECONNECT⚠️", port_name), error, Some(motor_name), 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                     return;
                                 }
@@ -191,9 +191,9 @@ impl Serial {
                                 lock.main_phase = StepperState::Invalid;
                                 lock.main_phase_start_time = None;
                             }
-                            port.lock().take();
+                            // port.lock().take();
                             let error = Some(anyhow!(err));
-                            let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name), 5, false);
+                            let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {} - ⚠️YOU SHOULD RECONNECT⚠️", port_name), error, Some(motor_name), 5, false);
                             message_tx.as_ref().unwrap().send(message).unwrap();
                             return;
                         }
