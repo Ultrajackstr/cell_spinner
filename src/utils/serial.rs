@@ -82,11 +82,14 @@ impl Serial {
                     Ok(n) => n,
                     Err(err) => {
                         is_running.store(false, Ordering::SeqCst);
-                        timers_and_phases.lock().set_global_stop_time_stopped();
-                        timers_and_phases.lock().sub_phase = StepperState::Invalid;
-                        timers_and_phases.lock().sub_phase_start_time = None;
-                        timers_and_phases.lock().main_phase = StepperState::Invalid;
-                        timers_and_phases.lock().main_phase_start_time = None;
+                        {
+                            let mut lock = timers_and_phases.lock();
+                            lock.set_global_stop_time_stopped();
+                            lock.sub_phase = StepperState::Invalid;
+                            lock.sub_phase_start_time = None;
+                            lock.main_phase = StepperState::Invalid;
+                            lock.main_phase_start_time = None;
+                        }
                         let error = Some(anyhow!(err));
                         let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name.clone()), 5, false);
                         message_tx.as_ref().unwrap().send(message).unwrap();
@@ -107,53 +110,66 @@ impl Serial {
                                 | StepperState::OverHeat | StepperState::OverCurrent => {
                                     is_running.store(false, Ordering::SeqCst);
                                     timers_and_phases.lock().set_global_stop_time_stopped();
-                                    timers_and_phases.lock().sub_phase = state;
-                                    timers_and_phases.lock().sub_phase_start_time = None;
-                                    timers_and_phases.lock().main_phase = state;
-                                    timers_and_phases.lock().main_phase_start_time = None;
+                                    {
+                                        let mut lock = timers_and_phases.lock();
+                                        lock.sub_phase = state;
+                                        lock.sub_phase_start_time = None;
+                                        lock.main_phase = state;
+                                        lock.main_phase_start_time = None;
+                                    }
                                     let error = Some(anyhow!("Motor stopped !"));
                                     let message: Message = Message::new(ToastKind::Error, &message, error, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::Finished => {
                                     is_running.store(false, Ordering::SeqCst);
-                                    timers_and_phases.lock().set_global_stop_time_stopped();
-                                    timers_and_phases.lock().sub_phase = state;
-                                    timers_and_phases.lock().sub_phase_start_time = None;
-                                    timers_and_phases.lock().main_phase = state;
-                                    timers_and_phases.lock().main_phase_start_time = None;
+                                    {
+                                        let mut lock = timers_and_phases.lock();
+                                        lock.set_global_stop_time_stopped();
+                                        lock.sub_phase = state;
+                                        lock.sub_phase_start_time = None;
+                                        lock.main_phase = state;
+                                        lock.main_phase_start_time = None;
+                                    }
                                     let message: Message = Message::new(ToastKind::Success, &message, None, origin, 5, false);
                                     message_tx.as_ref().unwrap().send(message).unwrap();
                                 }
                                 StepperState::StartRotation | StepperState::StartAgitation => {
-                                    timers_and_phases.lock().main_phase = state;
-                                    timers_and_phases.lock().main_phase_start_time = Some(Instant::now());
+                                    let mut lock = timers_and_phases.lock();
+                                    lock.main_phase = state;
+                                    lock.main_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationRotation => {
-                                    let direction = timers_and_phases.lock().rotation_direction.reverse();
-                                    timers_and_phases.lock().rotation_direction = direction;
-                                    timers_and_phases.lock().sub_phase = state;
-                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
+                                    let mut lock = timers_and_phases.lock();
+                                    let direction = lock.rotation_direction.reverse();
+                                    lock.rotation_direction = direction;
+                                    lock.sub_phase = state;
+                                    lock.sub_phase_start_time = Some(Instant::now());
                                 }
                                 StepperState::OscillationAgitation => {
-                                    let direction = timers_and_phases.lock().agitation_direction.reverse();
-                                    timers_and_phases.lock().agitation_direction = direction;
-                                    timers_and_phases.lock().sub_phase = state;
-                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
+                                    let mut lock = timers_and_phases.lock();
+                                    let direction = lock.agitation_direction.reverse();
+                                    lock.agitation_direction = direction;
+                                    lock.sub_phase = state;
+                                    lock.sub_phase_start_time = Some(Instant::now());
                                 }
                                 _ => {
-                                    timers_and_phases.lock().sub_phase = state;
-                                    timers_and_phases.lock().sub_phase_start_time = Some(Instant::now());
+                                    let mut lock = timers_and_phases.lock();
+                                    lock.sub_phase = state;
+                                    lock.sub_phase_start_time = Some(Instant::now());
                                 }
                             }
                         }
                         Err(err) => {
                             is_running.store(false, Ordering::SeqCst);
-                            timers_and_phases.lock().set_global_stop_time_stopped();
-                            timers_and_phases.lock().sub_phase = StepperState::Invalid;
-                            timers_and_phases.lock().sub_phase_start_time = None;
-                            timers_and_phases.lock().main_phase = StepperState::Invalid;
-                            timers_and_phases.lock().main_phase_start_time = None;
+                            {
+                                let mut lock = timers_and_phases.lock();
+                                lock.set_global_stop_time_stopped();
+                                lock.sub_phase = StepperState::Invalid;
+                                lock.sub_phase_start_time = None;
+                                lock.main_phase = StepperState::Invalid;
+                                lock.main_phase_start_time = None;
+                            }
                             let error = Some(anyhow!(err));
                             let message: Message = Message::new(ToastKind::Error, &format!("Error while reading serial port {}", port_name), error, Some(motor_name), 5, false);
                             message_tx.as_ref().unwrap().send(message).unwrap();
