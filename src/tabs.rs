@@ -87,6 +87,11 @@ impl Tabs<'_> {
             Ok(ports) => {
                 let available_ports: Vec<String> = ports.iter().map(|port| port.port_name.clone())
                     .filter(|port| !self.already_connected_ports.lock().contains(port)).collect();
+                if let Some(selected_port) = self.selected_port.get(&tab) {
+                    if !available_ports.contains(&selected_port) {
+                        self.selected_port.insert(tab, available_ports.get(0).unwrap_or(&"".to_string()).clone());
+                    }
+                }
                 available_ports
             }
             Err(err) => {
@@ -96,13 +101,12 @@ impl Tabs<'_> {
             }
         };
         *self.available_ports = available_ports;
-        self.selected_port.insert(tab, self.available_ports[0].clone());
     }
 
     pub fn disconnect(&mut self, tab: usize) {
         self.already_connected_ports.lock().retain(|x| *x != self.motor.get(&tab).unwrap().serial.port_name);
         self.motor.get_mut(&tab).unwrap().disconnect(self.channels.message_tx.clone());
-        self.selected_port.get_mut(&tab).unwrap().clear();
+        // self.selected_port.get_mut(&tab).unwrap().clear();
         self.refresh_available_serial_ports(tab);
     }
 }

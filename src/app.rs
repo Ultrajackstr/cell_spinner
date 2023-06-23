@@ -217,7 +217,7 @@ impl CellSpinner {
                 vec!["".to_string()]
             }
         };
-        self.selected_port.insert(tab, available_ports[0].clone());
+        self.selected_port.insert(tab, available_ports.get(0).unwrap_or(&"".to_string()).clone());
         self.available_ports = available_ports;
         self.promise_serial_connect.insert(tab, None);
         self.rotating_tubes.insert(tab, (RotatingTube::new(65.0, THEME.sapphire), RotatingTube::new(65.0, THEME.blue)));
