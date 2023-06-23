@@ -9,6 +9,8 @@ use anyhow::Error;
 use chrono::Local;
 use dirs::home_dir;
 use egui::{FontFamily, Style, Visuals};
+use time::macros::format_description;
+use tracing_subscriber::fmt::time::LocalTime;
 use walkdir::WalkDir;
 
 const APP_NAME: &str = "cell_spinner";
@@ -75,7 +77,11 @@ fn main() -> eframe::Result<()> {
     let log_file = std::fs::File::create(log_file).unwrap();
     let log_file = Mutex::new(log_file);
 
+    let timer = LocalTime::new(format_description!("[year]-[month]-[day]_[hour]:[minute]:[second]"));
+
     tracing_subscriber::fmt()
+        .with_ansi(false)
+        .with_timer(timer)
         .with_writer(log_file)
         .init();
 
