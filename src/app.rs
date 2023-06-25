@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::PathBuf;
@@ -62,7 +63,7 @@ pub struct CellSpinner {
     // Promises
     promise_serial_connect: Arc<DashMap<usize, Option<()>>>,
     // Serial
-    selected_port: DashMap<usize, String>,
+    selected_port: HashMap<usize, String>,
     available_ports: Vec<String>,
     already_connected_ports: Arc<Mutex<Vec<String>>>,
     // Motor
@@ -97,7 +98,7 @@ impl Default for CellSpinner {
             error_log: vec![],
             allowed_to_close: false,
             promise_serial_connect: Arc::new(Default::default()),
-            selected_port: DashMap::new(),
+            selected_port: HashMap::new(),
             available_ports: vec![],
             already_connected_ports: Arc::new(Mutex::new(vec![])),
             current_tab_counter: 1,

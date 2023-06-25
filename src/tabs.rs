@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
 
@@ -20,7 +21,7 @@ pub struct Tabs<'a> {
     // pub frame: &'a mut Frame,
     pub available_ports: &'a mut Vec<String>,
     pub already_connected_ports: &'a mut Arc<Mutex<Vec<String>>>,
-    pub selected_port: &'a mut DashMap<usize, String>,
+    pub selected_port: &'a mut HashMap<usize, String>,
     pub motor_name: &'a mut DashMap<usize, String>,
     pub motor: &'a mut Arc<DashMap<usize, Motor>>,
     pub durations: &'a mut DashMap<usize, Durations>,
@@ -136,12 +137,12 @@ impl TabViewer for Tabs<'_> {
                             }
                         });
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none(), |ui| {
-                            let selected_port = self.selected_port.get(tab).unwrap().value().clone();
+                            let selected_port = self.selected_port.get(tab).unwrap();
                             egui::ComboBox::from_id_source("available_ports")
                                 .selected_text(selected_port)
                                 .show_ui(ui, |ui| {
                                     for port in self.available_ports.iter() {
-                                        ui.selectable_value(self.selected_port.get_mut(tab).unwrap().value_mut(), port.to_string(), port.to_string());
+                                        ui.selectable_value(self.selected_port.get_mut(tab).unwrap(), port.to_string(), port.to_string());
                                     }
                                 });
                         });
@@ -164,7 +165,7 @@ impl TabViewer for Tabs<'_> {
                         ui.add_enabled_ui(!is_connected && self.promise_serial_connect.get(tab).unwrap().is_none() &&
                                               !self.available_ports.is_empty(), |ui| {
                             if ui.add_sized(FONT_BUTTON_SIZE.button_default, egui::Button::new(RichText::new("Connect").color(Color32::WHITE)).fill(THEME.green)).clicked() {
-                                let selected_port = self.selected_port.get(tab).unwrap().value().to_string();
+                                let selected_port = self.selected_port.get(tab).unwrap().to_string();
                                 let motor_name = self.motor_name.get(tab).unwrap().clone();
                                 self.thread_spawn_new_motor(*tab, selected_port.clone(), motor_name);
                                 self.channels.message_tx.as_ref().unwrap().send(Message::new(ToastKind::Info, &format!("Connecting to serial port {}...", selected_port), None, Some(format!("Motor {}", tab)), 0, true)).ok();
