@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::thread;
 
+use chrono::Local;
 use dashmap::DashMap;
 use egui::{Color32, RichText, Ui, WidgetText};
 use egui::plot::{Corner, Legend, Line};
@@ -125,6 +126,7 @@ impl TabViewer for Tabs<'_> {
         self.motor.get_mut(tab).unwrap().frame_hisory.on_new_frame(self.main_context.input(|i| i.time), None);
         let frame_time_sec = 1.0 / self.motor.get(tab).unwrap().frame_hisory.fps();
         let is_connected = self.motor.get(tab).unwrap().get_is_connected();
+        // let is_connected = true;
         let is_running = self.motor.get(tab).unwrap().get_is_running();
         egui::ScrollArea::horizontal().id_source("connect").show(ui, |ui| {
             ui.horizontal(|ui| {
@@ -235,44 +237,48 @@ impl TabViewer for Tabs<'_> {
                 // Convert the run time to days, hours, minutes, seconds and milliseconds.
                 let run_time_ms = self.motor.get(tab).unwrap().timers_and_phases.lock().get_elapsed_time_since_global_start_as_millis();
                 let is_stop_time = self.motor.get(tab).unwrap().timers_and_phases.lock().global_stop_time_ms;
-                ui.vertical_centered(|ui| {
+                ui.vertical(|ui| {
                     // Run time
-                    ui.horizontal(|ui| {
-                        if run_time_ms != 0 && is_stop_time.is_none() {
-                            let duration = DurationHelper::new_from_milliseconds(run_time_ms);
-                            // Run time text.
-                            ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        } else if is_stop_time.is_some() {
-                            let stop_time_ms = is_stop_time.unwrap();
-                            let duration = DurationHelper::new_from_milliseconds(stop_time_ms);
-                            // Run time text.
-                            ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        } else {
-                            ui.label(RichText::new("Run time ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        }
-                    });
+                    if run_time_ms != 0 && is_stop_time.is_none() {
+                        let duration = DurationHelper::new_from_milliseconds(run_time_ms);
+                        // Run time text.
+                        ui.label(RichText::new(format!("Current run time ➡️ {} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                    } else if is_stop_time.is_some() {
+                        let stop_time_ms = is_stop_time.unwrap();
+                        let duration = DurationHelper::new_from_milliseconds(stop_time_ms);
+                        // Run time text.
+                        ui.label(RichText::new(format!("Last session duration ➡️ {} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                        // ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                    } else {
+                        ui.label(RichText::new("Current run time ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                    }
                     // Expected end date
-                    ui.horizontal(|ui| {
-                        let expected_end_date = self.motor.get(tab).unwrap().timers_and_phases.lock().expected_end_date;
-                        if let Some(expected_end_date) = expected_end_date {
-                            let expected_end_date = expected_end_date;
-                            let expected_end_date = expected_end_date.format("%Y/%m/%d %H:%M:%S").to_string();
-                            ui.label(RichText::new("Expected end date ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                            ui.label(RichText::new(expected_end_date).size(FONT_BUTTON_SIZE.font_default + 2.0));
+                    let expected_end_date = self.motor.get(tab).unwrap().timers_and_phases.lock().expected_end_date;
+                    if let Some(expected_end_date) = expected_end_date {
+                        let now_date = Local::now();
+                        let remaining_duration_millis = (expected_end_date - now_date).num_milliseconds();
+                        let duration = DurationHelper::new_from_milliseconds(remaining_duration_millis as u64);
+                        let expected_end_date = expected_end_date.format("%Y/%m/%d %H:%M:%S").to_string();
+                        if is_running {
+                            ui.label(RichText::new(format!("Expected end date ➡️ {}", expected_end_date)).size(FONT_BUTTON_SIZE.font_default + 2.0))
+                                .on_hover_text(format!("Remaining time: {} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds));
                         } else {
-                            ui.label(RichText::new("Expected end date ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                            ui.label(RichText::new(format!("Expected end date ➡️ {}", expected_end_date)).size(FONT_BUTTON_SIZE.font_default + 2.0));
                         }
-                    });
+                    } else {
+                        ui.label(RichText::new("Expected end date ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
+                    }
                 });
             });
         });
