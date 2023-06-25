@@ -71,7 +71,7 @@ pub struct CellSpinner {
     motor_name: HashMap<usize, String>,
     durations: HashMap<usize, Durations>,
     motor: Arc<DashMap<usize, Motor>>,
-    rotating_tubes: DashMap<usize, (RotatingTube, RotatingTube)>,
+    rotating_tubes: HashMap<usize, (RotatingTube, RotatingTube)>,
     // Tabs
     current_tab_counter: usize,
     tree: Tree<usize>,

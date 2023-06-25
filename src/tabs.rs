@@ -31,7 +31,7 @@ pub struct Tabs<'a> {
     pub current_tab_counter: &'a mut usize,
     pub absolute_tab_counter: &'a mut usize,
     pub can_tab_close: &'a mut bool,
-    pub rotating_tubes: &'a mut DashMap<usize, (RotatingTube, RotatingTube)>,
+    pub rotating_tubes: &'a mut HashMap<usize, (RotatingTube, RotatingTube)>,
 }
 
 impl Tabs<'_> {
