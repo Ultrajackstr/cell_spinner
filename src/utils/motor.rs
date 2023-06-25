@@ -84,6 +84,10 @@ impl Motor {
 
     pub fn calculate_expected_end_date(&self) {
         let global_duration = self.protocol.global_duration_ms;
+        if global_duration == 0 {
+            self.timers_and_phases.lock().expected_end_date = None;
+            return;
+        }
         let date_now = Local::now();
         let date_expected_end = date_now + chrono::Duration::milliseconds(global_duration as i64);
         self.timers_and_phases.lock().expected_end_date = Some(date_expected_end);

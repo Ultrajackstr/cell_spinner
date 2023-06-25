@@ -643,35 +643,30 @@ impl TabViewer for Tabs<'_> {
                         ui.add_enabled_ui(!is_running, |ui| {
                             // Global duration of the protocol
                             ui.horizontal(|ui| {
-                                let mut expected_end_needs_update = false;
                                 let color = if self.motor.get(tab).unwrap().protocol.global_duration_ms == 0 { THEME.red } else { THEME.text };
                                 ui.label(RichText::new("Global duration:").color(color).size(15.0)).on_hover_text("Global duration of the protocol.");
                                 ui.horizontal(|ui| {
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.days).suffix(" d").speed(2.0).clamp_range(0..=364)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
-                                        expected_end_needs_update = true;
+                                        self.motor.get(tab).unwrap().calculate_expected_end_date();
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.hours).suffix(" h").clamp_range(0..=23)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
-                                        expected_end_needs_update = true;
+                                        self.motor.get(tab).unwrap().calculate_expected_end_date();
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.minutes).suffix(" min").clamp_range(0..=59)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
-                                        expected_end_needs_update = true;
+                                        self.motor.get(tab).unwrap().calculate_expected_end_date();
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.seconds).suffix(" s").clamp_range(0..=59)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
-                                        expected_end_needs_update = true;
+                                        self.motor.get(tab).unwrap().calculate_expected_end_date();
                                     }
                                     if ui.add(egui::DragValue::new(&mut self.durations.get_mut(tab).unwrap().global_duration.milliseconds).suffix(" ms").speed(3.0).clamp_range(0..=999)).changed() {
                                         self.motor.get_mut(tab).unwrap().protocol.global_duration_ms = self.durations.get(tab).unwrap().global_duration.to_milliseconds();
-                                        expected_end_needs_update = true;
+                                        self.motor.get(tab).unwrap().calculate_expected_end_date();
                                     }
                                 });
-                                if expected_end_needs_update {
-                                    self.motor.get(tab).unwrap().calculate_expected_end_date();
-                                    expected_end_needs_update = false;
-                                }
                             });
                         });
                         ui.separator();
