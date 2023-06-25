@@ -63,7 +63,7 @@ impl Tabs<'_> {
         self.promise_serial_connect.insert(tab, Some(()));
         let promise = self.promise_serial_connect.clone();
         let motors = self.motor.clone();
-        let channels = self.channels.message_tx.clone();
+        let message_channel = self.channels.message_tx.clone();
         let already_connected_ports = self.already_connected_ports.clone();
         let protocol = self.motor.get(&tab).unwrap().protocol;
         let graph = self.motor.get(&tab).unwrap().graph.clone();
@@ -72,14 +72,14 @@ impl Tabs<'_> {
             let motor = match Motor::new_with_already_loaded_protocol(serial_port.clone(), motor_name, already_connected_ports, protocol, graph, steps_per_cycle) {
                 Ok(motor) => motor,
                 Err(err) => {
-                    channels.as_ref().unwrap().send(Message::new(ToastKind::Error, &format!("Error while connecting to serial port {}", serial_port), Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
+                    message_channel.as_ref().unwrap().send(Message::new(ToastKind::Error, &format!("Error while connecting to serial port {}", serial_port), Some(err), Some(format!("Motor {}", tab)), 3, false)).ok();
                     promise.insert(tab, None);
                     return;
                 }
             };
             motors.insert(tab, motor);
             promise.insert(tab, None);
-            channels.as_ref().unwrap().send(Message::new(ToastKind::Success, &format!("Successfully connected to serial port {}", serial_port), None, Some(format!("Motor {}", tab)), 3, false)).ok();
+            message_channel.as_ref().unwrap().send(Message::new(ToastKind::Success, &format!("Successfully connected to serial port {}", serial_port), None, Some(format!("Motor {}", tab)), 3, false)).ok();
         });
     }
 
