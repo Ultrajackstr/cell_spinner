@@ -22,7 +22,7 @@ pub struct Tabs<'a> {
     pub available_ports: &'a mut Vec<String>,
     pub already_connected_ports: &'a mut Arc<Mutex<Vec<String>>>,
     pub selected_port: &'a mut HashMap<usize, String>,
-    pub motor_name: &'a mut DashMap<usize, String>,
+    pub motor_name: &'a mut HashMap<usize, String>,
     pub motor: &'a mut Arc<DashMap<usize, Motor>>,
     pub durations: &'a mut DashMap<usize, Durations>,
     pub promise_serial_connect: &'a mut Arc<DashMap<usize, Option<()>>>,
@@ -147,10 +147,10 @@ impl TabViewer for Tabs<'_> {
                                 });
                         });
                         ui.add_enabled_ui(is_connected && !is_running, |ui| {
-                            if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap().value_mut()))
+                            if ui.add_sized(egui::vec2(100.0, 20.0), egui::TextEdit::singleline(self.motor_name.get_mut(tab).unwrap()))
                                 .on_hover_text("Change the name of the motor")
                                 .lost_focus() {
-                                tracing::info!("{}: Changed name: {} to {}",self.motor.get(tab).unwrap().serial.port_name, self.motor.get(tab).unwrap().name, self.motor_name.get(tab).unwrap().value());
+                                tracing::info!("{}: Changed name: {} to {}",self.motor.get(tab).unwrap().serial.port_name, self.motor.get(tab).unwrap().name, self.motor_name.get(tab).unwrap());
                                 self.motor.get_mut(tab).unwrap().name = self.motor_name.get(tab).unwrap().to_string();
                             }
                         });
