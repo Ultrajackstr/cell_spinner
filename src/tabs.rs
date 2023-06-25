@@ -24,7 +24,7 @@ pub struct Tabs<'a> {
     pub selected_port: &'a mut HashMap<usize, String>,
     pub motor_name: &'a mut HashMap<usize, String>,
     pub motor: &'a mut Arc<DashMap<usize, Motor>>,
-    pub durations: &'a mut DashMap<usize, Durations>,
+    pub durations: &'a mut HashMap<usize, Durations>,
     pub promise_serial_connect: &'a mut Arc<DashMap<usize, Option<()>>>,
     pub added_nodes: &'a mut Vec<NodeIndex>,
     pub added_tabs: &'a mut Vec<usize>,
