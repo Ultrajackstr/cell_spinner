@@ -91,9 +91,9 @@ fn main() -> eframe::Result<()> {
 
     let native_options = eframe::NativeOptions {
         resizable: true,
-        maximized: true,
+        // maximized: true,
         icon_data: Some(load_icon(ICON)),
-        // initial_window_size: Some(egui::Vec2 { x: 1390.0, y: 775.0 }),
+        initial_window_size: Some(egui::Vec2 { x: 1390.0, y: 775.0 }),
         ..Default::default()
     };
 
