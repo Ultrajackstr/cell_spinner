@@ -243,23 +243,11 @@ impl TabViewer for Tabs<'_> {
                         let duration = DurationHelper::new_from_milliseconds(run_time_ms);
                         // Run time text.
                         ui.label(RichText::new(format!("Current run time ➡️ {} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new("Current run time ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
                     } else if is_stop_time.is_some() {
                         let stop_time_ms = is_stop_time.unwrap();
                         let duration = DurationHelper::new_from_milliseconds(stop_time_ms);
                         // Run time text.
                         ui.label(RichText::new(format!("Last session duration ➡️ {} d {} h {} min {} s {} ms", duration.days, duration.hours, duration.minutes, duration.seconds, duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new("Last session duration ➡️").size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} d", duration.days)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} h", duration.hours)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} min", duration.minutes)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} s", duration.seconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
-                        // ui.label(RichText::new(format!("{} ms", duration.milliseconds)).size(FONT_BUTTON_SIZE.font_default + 2.0));
                     } else {
                         ui.label(RichText::new("Current run time ➡️ None").size(FONT_BUTTON_SIZE.font_default + 2.0));
                     }
