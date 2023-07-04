@@ -780,60 +780,46 @@ impl TabViewer for Tabs<'_> {
         ui.visuals_mut().extreme_bg_color = THEME.base;
         // Graph Rotation
         egui::ScrollArea::horizontal().id_source("rotation_scroll").show(ui, |ui| {
-            if let Some(points) = self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.try_lock() {
-                let number_rotation_points = points.len();
-                if number_rotation_points <= MAX_POINTS_GRAPHS {
-                    let line = Line::new(points.clone()).name("Rotation").color(THEME.sapphire);
-                    egui::plot::Plot::new("rotation_graph")
-                        .legend(Legend { position: Corner::RightTop, ..Default::default() })
-                        .auto_bounds_x()
-                        .auto_bounds_y()
-                        .show_background(true)
-                        .height(200.0)
-                        .label_formatter(move |_s, value| {
-                            format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
-                        })
-                        .show(ui, |plot_ui| {
-                            plot_ui.line(line);
-                        });
-                } else {
-                    ui.heading(RichText::new("Too many points to display rotation graph.").color(THEME.mauve));
-                }
+            let number_rotation_points = self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().len();
+            if number_rotation_points <= MAX_POINTS_GRAPHS {
+                let line = Line::new(self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().clone()).name("Rotation").color(THEME.sapphire);
+                egui::plot::Plot::new("rotation_graph")
+                    .legend(Legend { position: Corner::RightTop, ..Default::default() })
+                    .auto_bounds_x()
+                    .auto_bounds_y()
+                    .show_background(true)
+                    .height(200.0)
+                    .label_formatter(move |_s, value| {
+                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
+                    })
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(line);
+                    });
             } else {
-                ui.horizontal(|ui| {
-                    ui.heading(RichText::new("Waiting for rotation points...").color(THEME.sapphire));
-                    ui.spinner();
-                });
-            };
+                ui.heading(RichText::new("Too many points to display rotation graph.").color(THEME.mauve));
+            }
         });
         ui.separator();
         // Graph Agitation
         egui::ScrollArea::horizontal().id_source("agitation_scroll").show(ui, |ui| {
-            if let Some(points) = self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.try_lock() {
-                let number_agitation_points = points.len();
-                if number_agitation_points <= MAX_POINTS_GRAPHS {
-                    let line = Line::new(points.clone()).name("Agitation").color(THEME.blue);
-                    egui::plot::Plot::new("agitation_graph")
-                        .auto_bounds_x()
-                        .auto_bounds_y()
-                        .show_background(true)
-                        .legend(Legend { position: Corner::RightTop, ..Default::default() })
-                        .height(200.0)
-                        .label_formatter(move |_s, value| {
-                            format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
-                        })
-                        .show(ui, |plot_ui| {
-                            plot_ui.line(line);
-                        });
-                } else {
-                    ui.heading(RichText::new("Too many points to display agitation graph.").color(THEME.mauve));
-                }
+            let number_agitation_points = self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().len();
+            if number_agitation_points <= MAX_POINTS_GRAPHS {
+                let line = Line::new(self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().clone()).name("Agitation").color(THEME.blue);
+                egui::plot::Plot::new("agitation_graph")
+                    .auto_bounds_x()
+                    .auto_bounds_y()
+                    .show_background(true)
+                    .legend(Legend { position: Corner::RightTop, ..Default::default() })
+                    .height(200.0)
+                    .label_formatter(move |_s, value| {
+                        format!("Time (s): {:.2}\nRPM: {:.0}", value.x, value.y)
+                    })
+                    .show(ui, |plot_ui| {
+                        plot_ui.line(line);
+                    });
             } else {
-                ui.horizontal(|ui| {
-                    ui.heading(RichText::new("Waiting for agitation points...").color(THEME.blue));
-                    ui.spinner();
-                });
-            };
+                ui.heading(RichText::new("Too many points to display agitation graph.").color(THEME.mauve));
+            }
         });
         ui.visuals_mut().extreme_bg_color = default_color;
     }

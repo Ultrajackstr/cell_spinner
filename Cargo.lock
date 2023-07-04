@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "cell_spinner"
-version = "0.9.82"
+version = "0.9.85"
 dependencies = [
  "anyhow",
  "catppuccin-egui",
