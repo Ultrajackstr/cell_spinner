@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Error};
 use catppuccin_egui::{LATTE, Theme};
-use chrono::Local;
+use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use dirs::home_dir;
 use egui::{Color32, FontFamily, FontId, RichText, Sense};
@@ -48,6 +48,7 @@ pub const THEME: Theme = Theme {
 
 pub struct CellSpinner {
     app_version: String,
+    date_app_launch: DateTime<Local>,
     is_first_frame: bool,
     toast_position_x: f32,
     toast_position_y: f32,
@@ -85,6 +86,7 @@ impl Default for CellSpinner {
     fn default() -> Self {
         Self {
             app_version: env!("CARGO_PKG_VERSION").to_string(),
+            date_app_launch: Local::now(),
             is_first_frame: true,
             toast_position_x: 0.0,
             toast_position_y: 0.0,
@@ -245,8 +247,8 @@ impl CellSpinner {
                         .clicked() {
                         if let Some(mut path) = home_dir() {
                             path.push("cell_spinner");
-                            let date = Local::now().format("%Y-%m-%d").to_string();
-                            path.push(&date);
+                            let date = &self.date_app_launch.format("%Y-%m-%d").to_string();
+                            path.push(date);
                             path.push("logs");
                             match Command::new("explorer")
                                 .arg(path)

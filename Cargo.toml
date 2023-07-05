@@ -1,6 +1,6 @@
 [package]
 name = "cell_spinner"
-version = "0.9.85"
+version = "0.9.87"
 authors = ["Giacomo Gropplero <giacomo@gropplero.com>"]
 edition = "2021"
 rust-version = "1.65"
@@ -24,7 +24,7 @@ egui-toast = { git = "https://github.com/Ultrajackstr/egui-toast.git" }
 egui_dock = "0.6.3"
 
 serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.99"
+serde_json = "1.0.100"
 
 time = { version = "0.3.22", features = ["local-offset", "macros"] }
 tracing-subscriber = { version = "0.3.17", features = ["time", "local-time"] }
