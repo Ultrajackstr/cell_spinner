@@ -143,7 +143,7 @@ impl Motor {
         self.serial.send_bytes(&self.protocol.protocol_as_bytes());
         self.calculate_expected_end_date();
         tracing::info!("Motor {} started.", self.name);
-        tracing::info!("{} of {}", self.protocol, self.name);
+        tracing::info!("{} - {}",self.name, self.protocol);
     }
 
     pub fn stop_motor(&self, message_tx: Option<Sender<Message>>) {
