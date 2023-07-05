@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 use std::thread;
 
 use chrono::Local;
 use dashmap::DashMap;
-use egui::{Color32, RichText, Ui, WidgetText};
+use egui::{Color32, Pos2, Rect, RichText, Ui, WidgetText};
 use egui::plot::{Corner, Legend, Line};
 use egui_dock::{NodeIndex, TabViewer};
 use egui_toast::ToastKind;
@@ -771,7 +772,7 @@ impl TabViewer for Tabs<'_> {
             let number_rotation_points = self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().len();
             if number_rotation_points <= MAX_POINTS_GRAPHS {
                 let line = Line::new(self.motor.get(tab).unwrap().graph.rotation_points_sec_rpm.lock().clone()).name("Rotation").color(THEME.sapphire);
-                egui::plot::Plot::new("rotation_graph")
+                let rotation_response = egui::plot::Plot::new("rotation_graph")
                     .legend(Legend { position: Corner::RightTop, ..Default::default() })
                     .auto_bounds_x()
                     .auto_bounds_y()
@@ -782,7 +783,16 @@ impl TabViewer for Tabs<'_> {
                     })
                     .show(ui, |plot_ui| {
                         plot_ui.line(line);
-                    });
+                    })
+                    .response;
+                if self.motor.get(tab).unwrap().graph.is_generating_rotation_graph.load(Ordering::SeqCst) {
+                    ui.put(Rect {
+                        min: rotation_response.rect.right_top(),
+                        max: Pos2 { x: rotation_response.rect.right_top().x - 30.0, y: rotation_response.rect.right_top().y + 85.0 },
+                    }, egui::widgets::Spinner::new().size(25.0).color(THEME.sapphire),
+                    )
+                        .on_hover_text("Generating rotation graph...");
+                }
             } else {
                 ui.heading(RichText::new("Too many points to display rotation graph.").color(THEME.mauve));
             }
@@ -793,7 +803,7 @@ impl TabViewer for Tabs<'_> {
             let number_agitation_points = self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().len();
             if number_agitation_points <= MAX_POINTS_GRAPHS {
                 let line = Line::new(self.motor.get(tab).unwrap().graph.agitation_points_sec_rpm.lock().clone()).name("Agitation").color(THEME.blue);
-                egui::plot::Plot::new("agitation_graph")
+                let agitation_response = egui::plot::Plot::new("agitation_graph")
                     .auto_bounds_x()
                     .auto_bounds_y()
                     .show_background(true)
@@ -804,7 +814,16 @@ impl TabViewer for Tabs<'_> {
                     })
                     .show(ui, |plot_ui| {
                         plot_ui.line(line);
-                    });
+                    })
+                    .response;
+                if self.motor.get(tab).unwrap().graph.is_generating_agitation_graph.load(Ordering::SeqCst) {
+                    ui.put(Rect {
+                        min: agitation_response.rect.right_top(),
+                        max: Pos2 { x: agitation_response.rect.right_top().x - 30.0, y: agitation_response.rect.right_top().y + 85.0 },
+                    }, egui::widgets::Spinner::new().size(25.0).color(THEME.blue),
+                    )
+                        .on_hover_text("Generating agitation graph...");
+                }
             } else {
                 ui.heading(RichText::new("Too many points to display agitation graph.").color(THEME.mauve));
             }

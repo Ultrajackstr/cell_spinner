@@ -204,8 +204,10 @@ impl Motor {
         index_thread.fetch_add(1, Ordering::SeqCst);
         let index_thead_initial = index_thread.load(Ordering::SeqCst);
         let steps_rotation = self.steps_per_cycle.steps_per_direction_cycle_rotation.clone();
+        let is_generating_rotation_graph = self.graph.is_generating_rotation_graph.clone();
         // Rotation
         thread::spawn(move || {
+            is_generating_rotation_graph.store(true, Ordering::SeqCst);
             points_rotation.lock().clear();
             let mut stepgen = rotation.create_stepgen();
             let duration_ms = rotation.duration_of_one_direction_cycle_ms;
@@ -234,6 +236,7 @@ impl Motor {
                 acc_us_for_points += delay;
                 steps_rotation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
+            is_generating_rotation_graph.store(false, Ordering::SeqCst);
         });
     }
 
@@ -244,8 +247,10 @@ impl Motor {
         index_thread.fetch_add(1, Ordering::SeqCst);
         let index_thead_initial = index_thread.load(Ordering::SeqCst);
         let steps_agitation = self.steps_per_cycle.steps_per_direction_cycle_agitation.clone();
+        let is_generating_agitation_graph = self.graph.is_generating_agitation_graph.clone();
         // Agitation
         thread::spawn(move || {
+            is_generating_agitation_graph.store(true, Ordering::SeqCst);
             points_agitation.lock().clear();
             let mut stepgen = agitation.create_stepgen();
             let duration_ms = agitation.duration_of_one_direction_cycle_ms;
@@ -274,6 +279,7 @@ impl Motor {
                 acc_us_for_points += delay_us;
                 steps_agitation.store(stepgen.get_current_step(), Ordering::SeqCst);
             }
+            is_generating_agitation_graph.store(false, Ordering::SeqCst);
         });
     }
 }
